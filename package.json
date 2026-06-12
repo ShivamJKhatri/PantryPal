@@ -5,10 +5,26 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:vercel": "vercel dev",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:test": "tsx scripts/test-db.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/rds-signer": "^3.840.0",
+    "@vercel/functions": "^2.2.12",
+    "dotenv": "^16.6.1",
+    "drizzle-orm": "^0.44.2",
+    "pg": "^8.16.3"
   },
   "devDependencies": {
+    "@types/node": "^24.0.10",
+    "@types/pg": "^8.15.4",
+    "drizzle-kit": "^0.31.4",
+    "tsx": "^4.20.3",
     "typescript": "~6.0.2",
     "vite": "^8.0.12"
   }
