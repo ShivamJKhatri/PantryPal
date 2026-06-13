@@ -16,6 +16,7 @@
   "dependencies": {
     "@aws-sdk/rds-signer": "^3.840.0",
     "@vercel/functions": "^2.2.12",
+    "@vercel/node": "^5.8.17",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.2",
     "pg": "^8.16.3"
