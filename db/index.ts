@@ -11,24 +11,33 @@ function requireEnv(name: string): string {
   return value
 }
 
-const signer = new Signer({
-  hostname: requireEnv('PGHOST'),
-  port: Number(process.env.PGPORT ?? 5432),
-  username: requireEnv('PGUSER'),
-  region: requireEnv('AWS_REGION'),
-  credentials: awsCredentialsProvider({
-    roleArn: requireEnv('AWS_ROLE_ARN'),
-    clientConfig: { region: requireEnv('AWS_REGION') },
-  }),
-})
+let pool: Pool | undefined
 
-export const pool = new Pool({
-  host: process.env.PGHOST,
-  user: process.env.PGUSER,
-  database: process.env.PGDATABASE ?? 'postgres',
-  password: async () => await signer.getAuthToken(),
-  port: Number(process.env.PGPORT ?? 5432),
-  ssl: { rejectUnauthorized: false },
-})
+export function getPool(): Pool {
+  if (pool) {
+    return pool
+  }
 
-attachDatabasePool(pool)
+  const signer = new Signer({
+    hostname: requireEnv('PGHOST'),
+    port: Number(process.env.PGPORT ?? 5432),
+    username: requireEnv('PGUSER'),
+    region: requireEnv('AWS_REGION'),
+    credentials: awsCredentialsProvider({
+      roleArn: requireEnv('AWS_ROLE_ARN'),
+      clientConfig: { region: requireEnv('AWS_REGION') },
+    }),
+  })
+
+  pool = new Pool({
+    host: process.env.PGHOST,
+    user: process.env.PGUSER,
+    database: process.env.PGDATABASE ?? 'postgres',
+    password: async () => await signer.getAuthToken(),
+    port: Number(process.env.PGPORT ?? 5432),
+    ssl: { rejectUnauthorized: false },
+  })
+
+  attachDatabasePool(pool)
+  return pool
+}

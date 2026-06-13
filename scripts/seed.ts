@@ -2,10 +2,10 @@ import './load-env.ts'
 
 import { drizzle } from 'drizzle-orm/node-postgres'
 
-import { pool } from '../db/index.ts'
+import { getPool } from '../db/index.ts'
 import { recipeIngredients, recipes, users } from '../db/schema.ts'
 
-const db = drizzle(pool)
+const db = drizzle(getPool())
 
 await db
   .insert(users)
@@ -38,4 +38,4 @@ await db
   .onConflictDoNothing()
 
 console.log('Seed complete')
-await pool.end()
+await getPool().end()
