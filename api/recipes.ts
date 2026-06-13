@@ -2,8 +2,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/node-postgres'
 
-import { getPool } from '../db/index'
-import { recipeIngredients, recipes } from '../db/schema'
+import { getPool } from './_lib/pool.js'
+import { recipeIngredients, recipes } from './_lib/schema.js'
 
 export default async function handler(_request: VercelRequest, response: VercelResponse) {
   try {
