@@ -1,5 +1,5 @@
 {
-  "name": "my-app",
+  "name": "pantrypal",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -20,11 +20,16 @@
     "@vercel/node": "^5.8.17",
     "dotenv": "^16.6.1",
     "drizzle-orm": "^0.44.2",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@types/node": "^24.0.10",
     "@types/pg": "^8.15.4",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.2",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",
     "typescript": "~6.0.2",
