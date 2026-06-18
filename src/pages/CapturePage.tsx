@@ -1,9 +1,9 @@
 import { useState, useRef } from 'react'
-import type { ShoppingList } from '../types/models.ts'
+import type { RecipeShoppingList } from '../types/models.ts'
 import { extractRecipeFromUrl, extractRecipeFromScreenshot } from '../services/api.ts'
 
 interface Props {
-  onListReady: (list: ShoppingList) => void
+  onListReady: (list: RecipeShoppingList) => void
 }
 
 export default function CapturePage({ onListReady }: Props) {

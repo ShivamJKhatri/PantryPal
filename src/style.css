@@ -105,6 +105,11 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
 }
 
 /* Shopping list */
+.list-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.25rem; }
+.source-link { font-size: 0.82rem; color: #6b7280; text-decoration: none; }
+.source-link:hover { color: #111827; text-decoration: underline; }
+.section-details { margin-bottom: 1rem; }
+.section-details summary { cursor: pointer; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem; }
 .item-list {
   list-style: none;
   border: 1px solid #e5e7eb;
@@ -122,12 +127,18 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   font-size: 0.9rem;
 }
 .item-row:last-child { border-bottom: none; }
-.item-name { flex: 1; font-weight: 500; }
-.item-product { color: #6b7280; font-size: 0.82rem; }
-.item-price { font-weight: 600; min-width: 3.5rem; text-align: right; }
+.item-info { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.item-name { font-weight: 500; font-size: 0.9rem; }
+.item-detail { color: #6b7280; font-size: 0.78rem; }
+.item-aisle { color: #9ca3af; font-size: 0.75rem; }
+.item-price { font-weight: 600; min-width: 3.5rem; text-align: right; font-size: 0.9rem; }
+.item-qty { display: flex; align-items: center; gap: 0.35rem; }
+.item-qty button { width: 22px; height: 22px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
+.item-qty button:disabled { opacity: 0.35; cursor: not-allowed; }
+.item-qty span { font-size: 0.875rem; min-width: 1.2rem; text-align: center; }
+.exclude-btn { width: 24px; height: 24px; border: 1px solid #d1fae5; border-radius: 50%; background: #d1fae5; color: #059669; cursor: pointer; font-size: 0.75rem; flex-shrink: 0; }
+.exclude-btn.excluded { background: #f3f4f6; border-color: #e5e7eb; color: #9ca3af; }
 .muted .item-name { color: #9ca3af; }
-.excluded-section { margin-bottom: 1rem; }
-.excluded-section summary { cursor: pointer; color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem; }
 .list-total {
   display: flex;
   justify-content: space-between;

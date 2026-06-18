@@ -3,6 +3,7 @@ import type {
   PantryStaple,
   Recipe,
   RecipeIngredient,
+  RecipeShoppingList,
   ShoppingList,
   ShoppingListItem,
   Store,
@@ -273,4 +274,27 @@ export function getNormalizedIngredientById(id: string): NormalizedIngredient | 
 
 export function getRecipeIngredientById(id: string): RecipeIngredient | undefined {
   return mockRecipeIngredients.find((ingredient) => ingredient.id === id)
+}
+
+/** Build a mock RecipeShoppingList for local development (no API required) */
+export function buildMockShoppingList(sourceUrl?: string): RecipeShoppingList {
+  return {
+    id: 'list-mock-1',
+    recipeId: mockRecipe.id,
+    recipeTitle: mockRecipe.title,
+    sourceUrl: sourceUrl ?? mockRecipe.sourceUrl,
+    storeId: mockStore.id,
+    zipCode: mockUser.zipCode,
+    estimatedTotal: 11.46,
+    currency: 'USD',
+    createdAt: MOCK_TIMESTAMP,
+    items: [
+      { id: 'item-1', ingredientName: 'Spaghetti', rawText: '1 lb spaghetti', productId: 'sku-spaghetti', productName: 'Kroger Spaghetti', aisle: 'Pasta', price: 1.29, quantityToBuy: 1, lineTotal: 1.29, excluded: false, hasLeftovers: true, notFound: false },
+      { id: 'item-2', ingredientName: 'Olive oil', rawText: '2 tbsp olive oil', productId: 'sku-olive-oil', productName: 'Extra Virgin Olive Oil', aisle: 'Oils', price: 7.49, quantityToBuy: 0, lineTotal: 0, excluded: true, hasLeftovers: true, notFound: false },
+      { id: 'item-3', ingredientName: 'Garlic', rawText: '4 cloves garlic', productId: 'sku-garlic', productName: 'Fresh Garlic Bulb', aisle: 'Produce', price: 0.69, quantityToBuy: 1, lineTotal: 0.69, excluded: false, hasLeftovers: true, notFound: false },
+      { id: 'item-4', ingredientName: 'Heavy cream', rawText: '1 cup heavy cream', productId: 'sku-heavy-cream', productName: 'Heavy Whipping Cream', aisle: 'Dairy', price: 3.99, quantityToBuy: 1, lineTotal: 3.99, excluded: false, hasLeftovers: true, notFound: false },
+      { id: 'item-5', ingredientName: 'Parmesan cheese', rawText: '1/2 cup grated parmesan', productId: 'sku-parmesan', productName: 'Parmesan Cheese', aisle: 'Cheese', price: 5.49, quantityToBuy: 1, lineTotal: 5.49, excluded: false, hasLeftovers: true, notFound: false },
+      { id: 'item-6', ingredientName: 'Salt and pepper', rawText: 'Salt and pepper to taste', productId: 'sku-salt', productName: 'Kosher Salt', aisle: 'Spices', price: 1.29, quantityToBuy: 0, lineTotal: 0, excluded: true, hasLeftovers: true, notFound: false },
+    ],
+  }
 }

@@ -1,0 +1,141 @@
+import { normalizeIngredient } from './normalizer.js'
+
+export type CatalogEntry = {
+  id: string
+  name: string
+  brand?: string
+  price: number
+  aisle: string
+  packageUnit: string
+  hasLeftovers: boolean
+  keywords: string[]
+}
+
+const CATALOG: CatalogEntry[] = [
+  // Produce
+  { id: 'sku-garlic', name: 'Fresh Garlic Bulb', price: 0.69, aisle: 'Produce', packageUnit: 'bulb', hasLeftovers: true, keywords: ['garlic', 'garlic cloves', 'garlic bulb'] },
+  { id: 'sku-onion', name: 'Yellow Onion', price: 0.89, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['onion', 'yellow onion', 'white onion', 'sweet onion'] },
+  { id: 'sku-red-onion', name: 'Red Onion', price: 1.19, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['red onion'] },
+  { id: 'sku-shallots', name: 'Shallots', price: 1.49, aisle: 'Produce', packageUnit: 'bag', hasLeftovers: true, keywords: ['shallots', 'shallot'] },
+  { id: 'sku-tomatoes', name: 'Roma Tomatoes', price: 1.49, aisle: 'Produce', packageUnit: 'lb', hasLeftovers: false, keywords: ['tomatoes', 'roma tomatoes', 'plum tomatoes', 'tomato'] },
+  { id: 'sku-cherry-tomatoes', name: 'Cherry Tomatoes', price: 3.49, aisle: 'Produce', packageUnit: 'pint', hasLeftovers: true, keywords: ['cherry tomatoes', 'grape tomatoes'] },
+  { id: 'sku-potatoes', name: 'Russet Potatoes', price: 3.99, aisle: 'Produce', packageUnit: '5 lb bag', hasLeftovers: true, keywords: ['potatoes', 'russet potatoes', 'baking potatoes', 'potato'] },
+  { id: 'sku-carrots', name: 'Carrots', price: 1.29, aisle: 'Produce', packageUnit: 'lb bag', hasLeftovers: true, keywords: ['carrots', 'carrot'] },
+  { id: 'sku-celery', name: 'Celery', price: 1.99, aisle: 'Produce', packageUnit: 'bunch', hasLeftovers: true, keywords: ['celery', 'celery stalk', 'celery stalks'] },
+  { id: 'sku-spinach', name: 'Baby Spinach', price: 3.99, aisle: 'Produce', packageUnit: '5 oz bag', hasLeftovers: true, keywords: ['spinach', 'baby spinach'] },
+  { id: 'sku-broccoli', name: 'Broccoli Crown', price: 2.49, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['broccoli', 'broccoli florets'] },
+  { id: 'sku-mushrooms', name: 'Baby Bella Mushrooms', price: 2.99, aisle: 'Produce', packageUnit: '8 oz', hasLeftovers: true, keywords: ['mushrooms', 'cremini mushrooms', 'baby bella mushrooms', 'button mushrooms'] },
+  { id: 'sku-bell-pepper', name: 'Bell Pepper', price: 1.29, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['bell pepper', 'red bell pepper', 'green bell pepper', 'yellow bell pepper', 'bell peppers'] },
+  { id: 'sku-lemon', name: 'Lemon', price: 0.79, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['lemon', 'lemons', 'lemon juice'] },
+  { id: 'sku-lime', name: 'Lime', price: 0.59, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['lime', 'limes', 'lime juice'] },
+  { id: 'sku-avocado', name: 'Avocado', price: 1.49, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['avocado', 'avocados'] },
+  { id: 'sku-zucchini', name: 'Zucchini', price: 1.29, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['zucchini', 'zucchinis', 'courgette'] },
+  { id: 'sku-cucumber', name: 'Cucumber', price: 0.99, aisle: 'Produce', packageUnit: 'each', hasLeftovers: false, keywords: ['cucumber', 'cucumbers'] },
+  { id: 'sku-green-beans', name: 'Green Beans', price: 2.49, aisle: 'Produce', packageUnit: '12 oz bag', hasLeftovers: true, keywords: ['green beans', 'string beans', 'haricots verts'] },
+  { id: 'sku-corn', name: 'Sweet Corn', price: 0.79, aisle: 'Produce', packageUnit: 'ear', hasLeftovers: false, keywords: ['corn', 'sweet corn', 'corn on the cob'] },
+
+  // Meat & Seafood
+  { id: 'sku-chicken-breast', name: 'Boneless Chicken Breast', price: 5.99, aisle: 'Meat', packageUnit: 'lb', hasLeftovers: false, keywords: ['chicken breast', 'chicken breasts', 'boneless chicken', 'chicken'] },
+  { id: 'sku-chicken-thigh', name: 'Boneless Chicken Thighs', price: 4.99, aisle: 'Meat', packageUnit: 'lb', hasLeftovers: false, keywords: ['chicken thighs', 'chicken thigh', 'boneless chicken thighs'] },
+  { id: 'sku-ground-beef', name: 'Ground Beef 80/20', price: 4.99, aisle: 'Meat', packageUnit: 'lb', hasLeftovers: false, keywords: ['ground beef', 'beef mince', 'minced beef', 'hamburger meat'] },
+  { id: 'sku-steak', name: 'Sirloin Steak', price: 9.99, aisle: 'Meat', packageUnit: 'lb', hasLeftovers: false, keywords: ['steak', 'sirloin', 'beef steak', 'flank steak', 'skirt steak', 'ribeye'] },
+  { id: 'sku-pork-chops', name: 'Pork Chops', price: 4.49, aisle: 'Meat', packageUnit: 'lb', hasLeftovers: false, keywords: ['pork chops', 'pork chop', 'pork loin chops'] },
+  { id: 'sku-bacon', name: 'Bacon', price: 5.49, aisle: 'Meat', packageUnit: '12 oz pkg', hasLeftovers: true, keywords: ['bacon', 'bacon strips', 'smoked bacon'] },
+  { id: 'sku-italian-sausage', name: 'Italian Sausage', price: 4.99, aisle: 'Meat', packageUnit: 'lb', hasLeftovers: false, keywords: ['italian sausage', 'sausage', 'pork sausage', 'italian sausages'] },
+  { id: 'sku-salmon', name: 'Atlantic Salmon Fillet', price: 8.99, aisle: 'Seafood', packageUnit: 'lb', hasLeftovers: false, keywords: ['salmon', 'salmon fillet', 'salmon fillets', 'atlantic salmon'] },
+  { id: 'sku-shrimp', name: 'Shrimp 21-25ct', price: 9.99, aisle: 'Seafood', packageUnit: 'lb', hasLeftovers: false, keywords: ['shrimp', 'prawns', 'large shrimp', 'jumbo shrimp'] },
+  { id: 'sku-tuna-can', name: 'Canned Tuna in Water', price: 1.49, aisle: 'Canned Goods', packageUnit: '5 oz can', hasLeftovers: false, keywords: ['canned tuna', 'tuna', 'tuna fish'] },
+
+  // Dairy & Eggs
+  { id: 'sku-eggs', name: 'Large Eggs', price: 3.99, aisle: 'Dairy', packageUnit: 'dozen', hasLeftovers: true, keywords: ['eggs', 'large eggs', 'egg'] },
+  { id: 'sku-milk', name: 'Whole Milk', price: 3.49, aisle: 'Dairy', packageUnit: 'gallon', hasLeftovers: true, keywords: ['milk', 'whole milk', 'dairy milk'] },
+  { id: 'sku-heavy-cream', name: 'Heavy Whipping Cream', price: 3.99, aisle: 'Dairy', packageUnit: 'pint', hasLeftovers: true, keywords: ['heavy cream', 'heavy whipping cream', 'whipping cream', 'double cream'] },
+  { id: 'sku-half-and-half', name: 'Half & Half', price: 2.99, aisle: 'Dairy', packageUnit: 'pint', hasLeftovers: true, keywords: ['half and half', 'half & half', 'cream'] },
+  { id: 'sku-butter', name: 'Unsalted Butter', price: 4.49, aisle: 'Dairy', packageUnit: 'lb (4 sticks)', hasLeftovers: true, keywords: ['butter', 'unsalted butter', 'salted butter'] },
+  { id: 'sku-cream-cheese', name: 'Cream Cheese', price: 2.99, aisle: 'Dairy', packageUnit: '8 oz block', hasLeftovers: true, keywords: ['cream cheese', 'philadelphia cream cheese'] },
+  { id: 'sku-sour-cream', name: 'Sour Cream', price: 2.49, aisle: 'Dairy', packageUnit: '16 oz tub', hasLeftovers: true, keywords: ['sour cream', 'creme fraiche'] },
+  { id: 'sku-greek-yogurt', name: 'Plain Greek Yogurt', price: 1.49, aisle: 'Dairy', packageUnit: '5.3 oz', hasLeftovers: false, keywords: ['greek yogurt', 'plain yogurt', 'yogurt', 'plain greek yogurt'] },
+  { id: 'sku-parmesan', name: 'Parmesan Cheese', price: 5.49, aisle: 'Cheese', packageUnit: '8 oz wedge', hasLeftovers: true, keywords: ['parmesan', 'parmesan cheese', 'parmigiano', 'grated parmesan', 'parmigiano-reggiano'] },
+  { id: 'sku-mozzarella', name: 'Shredded Mozzarella', price: 3.49, aisle: 'Cheese', packageUnit: '8 oz bag', hasLeftovers: true, keywords: ['mozzarella', 'shredded mozzarella', 'mozzarella cheese', 'fresh mozzarella'] },
+  { id: 'sku-cheddar', name: 'Cheddar Cheese', price: 4.99, aisle: 'Cheese', packageUnit: '8 oz block', hasLeftovers: true, keywords: ['cheddar', 'cheddar cheese', 'shredded cheddar'] },
+  { id: 'sku-feta', name: 'Feta Cheese', price: 4.49, aisle: 'Cheese', packageUnit: '6 oz', hasLeftovers: true, keywords: ['feta', 'feta cheese', 'crumbled feta'] },
+
+  // Dry Goods & Pantry
+  { id: 'sku-spaghetti', name: 'Spaghetti', price: 1.29, aisle: 'Pasta', packageUnit: '1 lb box', hasLeftovers: true, keywords: ['spaghetti'] },
+  { id: 'sku-penne', name: 'Penne Pasta', price: 1.49, aisle: 'Pasta', packageUnit: '1 lb box', hasLeftovers: true, keywords: ['penne', 'penne pasta', 'penne rigate'] },
+  { id: 'sku-fettuccine', name: 'Fettuccine', price: 1.49, aisle: 'Pasta', packageUnit: '1 lb box', hasLeftovers: true, keywords: ['fettuccine', 'fettuccini', 'linguine', 'pasta'] },
+  { id: 'sku-rice', name: 'Long-Grain White Rice', price: 4.99, aisle: 'Grains', packageUnit: '5 lb bag', hasLeftovers: true, keywords: ['rice', 'white rice', 'long grain rice', 'jasmine rice'] },
+  { id: 'sku-flour', name: 'All-Purpose Flour', price: 3.49, aisle: 'Baking', packageUnit: '5 lb bag', hasLeftovers: true, keywords: ['flour', 'all-purpose flour', 'all purpose flour', 'plain flour'] },
+  { id: 'sku-sugar', name: 'Granulated Sugar', price: 2.99, aisle: 'Baking', packageUnit: '4 lb bag', hasLeftovers: true, keywords: ['sugar', 'granulated sugar', 'white sugar'] },
+  { id: 'sku-brown-sugar', name: 'Brown Sugar', price: 2.79, aisle: 'Baking', packageUnit: '2 lb bag', hasLeftovers: true, keywords: ['brown sugar', 'light brown sugar', 'dark brown sugar'] },
+  { id: 'sku-powdered-sugar', name: 'Powdered Sugar', price: 2.49, aisle: 'Baking', packageUnit: '2 lb bag', hasLeftovers: true, keywords: ['powdered sugar', 'confectioners sugar', 'icing sugar'] },
+  { id: 'sku-olive-oil', name: 'Extra Virgin Olive Oil', price: 7.49, aisle: 'Oils', packageUnit: '16 oz bottle', hasLeftovers: true, keywords: ['olive oil', 'extra virgin olive oil', 'evoo'] },
+  { id: 'sku-veg-oil', name: 'Vegetable Oil', price: 3.99, aisle: 'Oils', packageUnit: '48 oz bottle', hasLeftovers: true, keywords: ['vegetable oil', 'canola oil', 'neutral oil', 'cooking oil'] },
+  { id: 'sku-sesame-oil', name: 'Sesame Oil', price: 4.99, aisle: 'Oils', packageUnit: '8 oz bottle', hasLeftovers: true, keywords: ['sesame oil', 'toasted sesame oil'] },
+  { id: 'sku-chicken-broth', name: 'Chicken Broth', price: 2.49, aisle: 'Canned Goods', packageUnit: '32 oz carton', hasLeftovers: true, keywords: ['chicken broth', 'chicken stock', 'chicken bouillon'] },
+  { id: 'sku-beef-broth', name: 'Beef Broth', price: 2.49, aisle: 'Canned Goods', packageUnit: '32 oz carton', hasLeftovers: true, keywords: ['beef broth', 'beef stock'] },
+  { id: 'sku-diced-tomatoes', name: 'Canned Diced Tomatoes', price: 1.29, aisle: 'Canned Goods', packageUnit: '14.5 oz can', hasLeftovers: false, keywords: ['diced tomatoes', 'canned tomatoes', 'canned diced tomatoes', 'crushed tomatoes'] },
+  { id: 'sku-tomato-paste', name: 'Tomato Paste', price: 1.19, aisle: 'Canned Goods', packageUnit: '6 oz can', hasLeftovers: true, keywords: ['tomato paste'] },
+  { id: 'sku-pasta-sauce', name: 'Marinara Sauce', price: 2.99, aisle: 'Canned Goods', packageUnit: '24 oz jar', hasLeftovers: true, keywords: ['pasta sauce', 'marinara sauce', 'marinara', 'tomato sauce'] },
+  { id: 'sku-coconut-milk', name: 'Coconut Milk', price: 1.99, aisle: 'Canned Goods', packageUnit: '13.5 oz can', hasLeftovers: false, keywords: ['coconut milk', 'full-fat coconut milk'] },
+  { id: 'sku-soy-sauce', name: 'Soy Sauce', price: 2.79, aisle: 'Condiments', packageUnit: '10 oz bottle', hasLeftovers: true, keywords: ['soy sauce', 'low sodium soy sauce', 'tamari'] },
+  { id: 'sku-worcestershire', name: 'Worcestershire Sauce', price: 2.49, aisle: 'Condiments', packageUnit: '10 oz bottle', hasLeftovers: true, keywords: ['worcestershire sauce', 'worcestershire'] },
+  { id: 'sku-hot-sauce', name: 'Hot Sauce', price: 2.99, aisle: 'Condiments', packageUnit: '5 oz bottle', hasLeftovers: true, keywords: ['hot sauce', 'sriracha', 'tabasco', 'frank\'s red hot'] },
+  { id: 'sku-dijon', name: 'Dijon Mustard', price: 2.99, aisle: 'Condiments', packageUnit: '8 oz jar', hasLeftovers: true, keywords: ['dijon mustard', 'dijon', 'mustard'] },
+  { id: 'sku-honey', name: 'Honey', price: 5.99, aisle: 'Condiments', packageUnit: '12 oz bottle', hasLeftovers: true, keywords: ['honey'] },
+  { id: 'sku-maple-syrup', name: 'Maple Syrup', price: 7.99, aisle: 'Condiments', packageUnit: '8 oz bottle', hasLeftovers: true, keywords: ['maple syrup', 'pure maple syrup'] },
+  { id: 'sku-panko', name: 'Panko Breadcrumbs', price: 2.99, aisle: 'Baking', packageUnit: '8 oz bag', hasLeftovers: true, keywords: ['panko', 'panko breadcrumbs', 'breadcrumbs', 'bread crumbs'] },
+  { id: 'sku-cornstarch', name: 'Cornstarch', price: 1.99, aisle: 'Baking', packageUnit: '16 oz box', hasLeftovers: true, keywords: ['cornstarch', 'corn starch', 'cornflour'] },
+  { id: 'sku-baking-powder', name: 'Baking Powder', price: 2.49, aisle: 'Baking', packageUnit: '8 oz can', hasLeftovers: true, keywords: ['baking powder'] },
+  { id: 'sku-baking-soda', name: 'Baking Soda', price: 1.49, aisle: 'Baking', packageUnit: '1 lb box', hasLeftovers: true, keywords: ['baking soda', 'bicarbonate of soda', 'bicarb'] },
+  { id: 'sku-vanilla', name: 'Pure Vanilla Extract', price: 4.99, aisle: 'Baking', packageUnit: '4 oz bottle', hasLeftovers: true, keywords: ['vanilla extract', 'pure vanilla extract', 'vanilla'] },
+  { id: 'sku-breadcrumbs', name: 'Italian Breadcrumbs', price: 2.49, aisle: 'Baking', packageUnit: '8 oz can', hasLeftovers: true, keywords: ['italian breadcrumbs', 'seasoned breadcrumbs'] },
+
+  // Spices
+  { id: 'sku-salt', name: 'Kosher Salt', price: 1.29, aisle: 'Spices', packageUnit: '26 oz box', hasLeftovers: true, keywords: ['salt', 'kosher salt', 'sea salt', 'table salt', 'fine salt'] },
+  { id: 'sku-black-pepper', name: 'Black Pepper', price: 2.99, aisle: 'Spices', packageUnit: '4 oz jar', hasLeftovers: true, keywords: ['black pepper', 'pepper', 'ground black pepper', 'freshly ground pepper'] },
+  { id: 'sku-garlic-powder', name: 'Garlic Powder', price: 2.49, aisle: 'Spices', packageUnit: '3.1 oz jar', hasLeftovers: true, keywords: ['garlic powder'] },
+  { id: 'sku-onion-powder', name: 'Onion Powder', price: 2.29, aisle: 'Spices', packageUnit: '3 oz jar', hasLeftovers: true, keywords: ['onion powder'] },
+  { id: 'sku-paprika', name: 'Paprika', price: 2.49, aisle: 'Spices', packageUnit: '3.1 oz jar', hasLeftovers: true, keywords: ['paprika', 'smoked paprika', 'sweet paprika'] },
+  { id: 'sku-cumin', name: 'Ground Cumin', price: 2.49, aisle: 'Spices', packageUnit: '2.1 oz jar', hasLeftovers: true, keywords: ['cumin', 'ground cumin', 'cumin seeds'] },
+  { id: 'sku-oregano', name: 'Dried Oregano', price: 2.49, aisle: 'Spices', packageUnit: '0.75 oz jar', hasLeftovers: true, keywords: ['oregano', 'dried oregano'] },
+  { id: 'sku-basil', name: 'Dried Basil', price: 2.49, aisle: 'Spices', packageUnit: '0.62 oz jar', hasLeftovers: true, keywords: ['basil', 'dried basil', 'fresh basil'] },
+  { id: 'sku-thyme', name: 'Dried Thyme', price: 2.49, aisle: 'Spices', packageUnit: '0.65 oz jar', hasLeftovers: true, keywords: ['thyme', 'dried thyme', 'fresh thyme'] },
+  { id: 'sku-rosemary', name: 'Dried Rosemary', price: 2.49, aisle: 'Spices', packageUnit: '0.62 oz jar', hasLeftovers: true, keywords: ['rosemary', 'dried rosemary', 'fresh rosemary'] },
+  { id: 'sku-red-pepper-flakes', name: 'Red Pepper Flakes', price: 2.49, aisle: 'Spices', packageUnit: '1.5 oz jar', hasLeftovers: true, keywords: ['red pepper flakes', 'chili flakes', 'crushed red pepper', 'red chili flakes'] },
+  { id: 'sku-chili-powder', name: 'Chili Powder', price: 2.29, aisle: 'Spices', packageUnit: '2.5 oz jar', hasLeftovers: true, keywords: ['chili powder', 'chili seasoning'] },
+  { id: 'sku-italian-seasoning', name: 'Italian Seasoning', price: 2.49, aisle: 'Spices', packageUnit: '0.75 oz jar', hasLeftovers: true, keywords: ['italian seasoning', 'italian herbs'] },
+  { id: 'sku-cinnamon', name: 'Ground Cinnamon', price: 2.99, aisle: 'Spices', packageUnit: '2.37 oz jar', hasLeftovers: true, keywords: ['cinnamon', 'ground cinnamon'] },
+  { id: 'sku-turmeric', name: 'Ground Turmeric', price: 2.49, aisle: 'Spices', packageUnit: '2.37 oz jar', hasLeftovers: true, keywords: ['turmeric', 'ground turmeric'] },
+  { id: 'sku-bay-leaves', name: 'Bay Leaves', price: 2.49, aisle: 'Spices', packageUnit: '0.25 oz jar', hasLeftovers: true, keywords: ['bay leaves', 'bay leaf'] },
+]
+
+export function matchIngredient(rawText: string): CatalogEntry | null {
+  const normalized = normalizeIngredient(rawText).toLowerCase().trim()
+  if (!normalized) return null
+
+  let best: CatalogEntry | null = null
+  let bestScore = 0
+
+  for (const entry of CATALOG) {
+    for (const kw of entry.keywords) {
+      const k = kw.toLowerCase()
+      let score = 0
+      if (normalized === k) {
+        // Exact match — highest priority, longer keyword wins ties
+        score = 10000 + k.length
+      } else if (normalized.includes(k)) {
+        score = k.length
+      } else if (k.includes(normalized)) {
+        score = normalized.length
+      }
+      if (score > bestScore) {
+        bestScore = score
+        best = entry
+      }
+    }
+  }
+
+  // Require at least 3 chars matched to avoid spurious matches
+  return bestScore >= 3 ? best : null
+}

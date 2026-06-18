@@ -90,3 +90,34 @@ export type Store = {
   name: string
   supportsLivePricing: boolean
 }
+
+/** One item on a recipe-generated shopping list (flat, display-ready) */
+export type RecipeShoppingListItem = {
+  id: string
+  ingredientName: string
+  rawText: string
+  productId: string
+  productName: string
+  productBrand?: string
+  aisle?: string
+  price: number
+  quantityToBuy: number
+  lineTotal: number
+  excluded: boolean
+  hasLeftovers: boolean
+  notFound: boolean
+}
+
+/** Full recipe shopping list returned by the API */
+export type RecipeShoppingList = {
+  id: string
+  recipeId: string
+  recipeTitle: string
+  sourceUrl?: string
+  storeId: string
+  zipCode: string
+  estimatedTotal: number
+  currency: 'USD'
+  createdAt: string
+  items: RecipeShoppingListItem[]
+}

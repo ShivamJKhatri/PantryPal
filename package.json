@@ -14,7 +14,7 @@
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-bedrock-runtime": "^3.1069.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.1071.0",
     "@aws-sdk/rds-signer": "^3.840.0",
     "@vercel/functions": "^2.2.12",
     "@vercel/node": "^5.8.17",
@@ -31,6 +31,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "drizzle-kit": "^0.31.4",
+    "playwright": "^1.61.0",
     "tsx": "^4.20.3",
     "typescript": "~6.0.2",
     "vite": "^8.0.12"

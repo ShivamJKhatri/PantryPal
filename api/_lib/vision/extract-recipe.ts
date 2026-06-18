@@ -79,7 +79,7 @@ export async function extractRecipeFromImage(
     }),
   )
 
-  const textBlock = response.output?.message?.content?.find((block) => 'text' in block && block.text)
+  const textBlock = response.output?.message?.content?.find((block: { text?: string }) => 'text' in block && block.text)
   const text = textBlock && 'text' in textBlock ? textBlock.text : undefined
 
   if (!text) {

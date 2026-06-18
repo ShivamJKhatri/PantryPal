@@ -2,13 +2,29 @@ import { useState } from 'react'
 import CapturePage from './pages/CapturePage.tsx'
 import ShoppingListPage from './pages/ShoppingListPage.tsx'
 import PantryPage from './pages/PantryPage.tsx'
-import type { ShoppingList } from './types/models.ts'
+import type { PantryStaple, RecipeShoppingList } from './types/models.ts'
+import { mockPantryStaples } from './data/mock-data.ts'
 
 export type Page = 'capture' | 'list' | 'pantry'
 
 export default function App() {
   const [page, setPage] = useState<Page>('capture')
-  const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null)
+  const [shoppingList, setShoppingList] = useState<RecipeShoppingList | null>(null)
+  const [staples, setStaples] = useState<PantryStaple[]>(mockPantryStaples)
+
+  function addStaple(label: string) {
+    const staple: PantryStaple = {
+      id: `ps-${Date.now()}`,
+      userId: 'user-1',
+      canonicalIngredientId: label.toLowerCase().replace(/\s+/g, '-'),
+      label,
+    }
+    setStaples((prev) => [...prev, staple])
+  }
+
+  function removeStaple(id: string) {
+    setStaples((prev) => prev.filter((s) => s.id !== id))
+  }
 
   return (
     <div className="app">
@@ -46,8 +62,12 @@ export default function App() {
             }}
           />
         )}
-        {page === 'list' && <ShoppingListPage list={shoppingList} />}
-        {page === 'pantry' && <PantryPage />}
+        {page === 'list' && (
+          <ShoppingListPage list={shoppingList} staples={staples} />
+        )}
+        {page === 'pantry' && (
+          <PantryPage staples={staples} onAdd={addStaple} onRemove={removeStaple} />
+        )}
       </main>
     </div>
   )

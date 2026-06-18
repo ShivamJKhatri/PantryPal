@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-
 import { extractRecipeFromImage } from './_lib/vision/extract-recipe.js'
+import { buildShoppingList } from './_lib/build-shopping-list.js'
 
 type ParseScreenshotBody = {
   imageBase64?: string
@@ -8,9 +8,7 @@ type ParseScreenshotBody = {
 }
 
 function readBody(request: VercelRequest): ParseScreenshotBody {
-  if (typeof request.body === 'string') {
-    return JSON.parse(request.body) as ParseScreenshotBody
-  }
+  if (typeof request.body === 'string') return JSON.parse(request.body) as ParseScreenshotBody
   return (request.body ?? {}) as ParseScreenshotBody
 }
 
@@ -38,9 +36,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
       return
     }
 
-    const result = await extractRecipeFromImage(imageBytes, mediaType)
-
-    response.status(200).json(result)
+    const { recipe } = await extractRecipeFromImage(imageBytes, mediaType)
+    const list = await buildShoppingList(recipe, { sourceType: 'screenshot' })
+    response.status(200).json(list)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     response.status(500).json({ error: message })

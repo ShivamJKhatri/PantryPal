@@ -1,27 +1,21 @@
 import { useState } from 'react'
 import type { PantryStaple } from '../types/models.ts'
-import { mockPantryStaples } from '../data/mock-data.ts'
 
-export default function PantryPage() {
-  const [staples, setStaples] = useState<PantryStaple[]>(mockPantryStaples)
+interface Props {
+  staples: PantryStaple[]
+  onAdd: (label: string) => void
+  onRemove: (id: string) => void
+}
+
+export default function PantryPage({ staples, onAdd, onRemove }: Props) {
   const [input, setInput] = useState('')
 
-  function addStaple(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const label = input.trim()
     if (!label) return
-    const newStaple: PantryStaple = {
-      id: `ps-${Date.now()}`,
-      userId: 'user-1',
-      canonicalIngredientId: label.toLowerCase().replace(/\s+/g, '-'),
-      label,
-    }
-    setStaples((prev) => [...prev, newStaple])
+    onAdd(label)
     setInput('')
-  }
-
-  function removeStaple(id: string) {
-    setStaples((prev) => prev.filter((s) => s.id !== id))
   }
 
   return (
@@ -29,7 +23,7 @@ export default function PantryPage() {
       <h1>My Pantry</h1>
       <p className="subtitle">Items here are excluded from your shopping lists.</p>
 
-      <form className="add-form" onSubmit={addStaple}>
+      <form className="add-form" onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="e.g. olive oil, salt, garlic…"
@@ -46,7 +40,7 @@ export default function PantryPage() {
           {staples.map((staple) => (
             <li key={staple.id} className="staple-row">
               <span>{staple.label}</span>
-              <button className="remove-btn" onClick={() => removeStaple(staple.id)}>×</button>
+              <button className="remove-btn" onClick={() => onRemove(staple.id)}>×</button>
             </li>
           ))}
         </ul>
