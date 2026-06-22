@@ -94,7 +94,12 @@ export default function App() {
           />
         )}
         {page === 'list' && (
-          <ShoppingListPage list={shoppingList} staples={staples} />
+          <ShoppingListPage
+            list={shoppingList}
+            staples={staples}
+            onAddToPantry={addStaple}
+            onNewRecipe={() => setPage('capture')}
+          />
         )}
         {page === 'pantry' && (
           <PantryPage staples={staples} onAdd={addStaple} onRemove={removeStaple} />

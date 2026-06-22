@@ -14,7 +14,7 @@ body {
   min-height: 100dvh;
 }
 
-/* Nav */
+/* ── Nav ──────────────────────────────────────────────────────────────────── */
 .nav {
   display: flex;
   align-items: center;
@@ -22,6 +22,9 @@ body {
   padding: 0.75rem 1.5rem;
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .nav-brand {
   font-weight: 700;
@@ -30,15 +33,17 @@ body {
 }
 .nav-links {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .nav-links button {
-  padding: 0.4rem 0.9rem;
+  padding: 0.4rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.82rem;
 }
 .nav-links button.active {
   background: #111827;
@@ -50,7 +55,7 @@ body {
   cursor: not-allowed;
 }
 
-/* Main */
+/* ── Main ─────────────────────────────────────────────────────────────────── */
 .main {
   flex: 1;
   padding: 2rem 1.5rem;
@@ -62,7 +67,7 @@ body {
 h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
 .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
 
-/* Capture */
+/* ── Capture page ─────────────────────────────────────────────────────────── */
 .url-form {
   display: flex;
   gap: 0.5rem;
@@ -70,6 +75,7 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
 }
 .url-form input {
   flex: 1;
+  min-width: 0;
   padding: 0.6rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -98,14 +104,32 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   margin: 0.75rem 0;
 }
 .upload-btn { width: 100%; }
-.error {
+
+.loading-hint {
+  margin-top: 0.75rem;
+  color: #6b7280;
+  font-size: 0.82rem;
+  text-align: center;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+
+.error-box {
   margin-top: 1rem;
-  color: #dc2626;
-  font-size: 0.875rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+.error-box p { color: #dc2626; font-size: 0.875rem; margin: 0; }
+.error-tip {
+  color: #9ca3af !important;
+  font-size: 0.8rem !important;
+  margin-top: 0.35rem !important;
 }
 
-/* Shopping list */
-.list-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.25rem; }
+/* ── Shopping list ────────────────────────────────────────────────────────── */
+.list-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.25rem; flex-wrap: wrap; }
 .source-link { font-size: 0.82rem; color: #6b7280; text-decoration: none; }
 .source-link:hover { color: #111827; text-decoration: underline; }
 .section-details { margin-bottom: 1rem; }
@@ -121,18 +145,29 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
 .item-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
+  gap: 0.6rem;
+  padding: 0.65rem 0.75rem;
   border-bottom: 1px solid #f3f4f6;
   font-size: 0.9rem;
 }
 .item-row:last-child { border-bottom: none; }
 .item-info { flex: 1; display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
-.item-name { font-weight: 500; font-size: 0.9rem; }
-.item-detail { color: #6b7280; font-size: 0.78rem; }
-.item-aisle { color: #9ca3af; font-size: 0.75rem; }
-.item-price { font-weight: 600; min-width: 3.5rem; text-align: right; font-size: 0.9rem; }
-.item-qty { display: flex; align-items: center; gap: 0.35rem; }
+.item-name { font-weight: 500; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-detail { color: #6b7280; font-size: 0.77rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-aisle { color: #9ca3af; font-size: 0.72rem; }
+.item-right { display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem; flex-shrink: 0; }
+.item-price { font-weight: 600; font-size: 0.875rem; }
+.pantry-btn {
+  background: none;
+  border: none;
+  font-size: 0.68rem;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+.pantry-btn:hover { color: #059669; }
+.item-qty { display: flex; align-items: center; gap: 0.3rem; flex-shrink: 0; }
 .item-qty button { width: 22px; height: 22px; border: 1px solid #d1d5db; border-radius: 4px; background: #fff; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; }
 .item-qty button:disabled { opacity: 0.35; cursor: not-allowed; }
 .item-qty span { font-size: 0.875rem; min-width: 1.2rem; text-align: center; }
@@ -147,10 +182,48 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 1rem;
+  margin-bottom: 1rem;
 }
 .list-total strong { font-size: 1.1rem; }
+.new-recipe-btn {
+  width: 100%;
+  padding: 0.65rem;
+  background: transparent;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+}
+.new-recipe-btn:hover { border-color: #111827; color: #111827; }
 
-/* Pantry */
+/* ── Empty states ─────────────────────────────────────────────────────────── */
+.empty-state-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1rem;
+  gap: 0.5rem;
+}
+.empty-icon { font-size: 2.5rem; }
+.empty-title { font-weight: 600; font-size: 1rem; color: #374151; }
+.empty-sub { color: #9ca3af; font-size: 0.875rem; max-width: 260px; }
+.empty-state { color: #9ca3af; font-size: 0.9rem; }
+.primary-btn {
+  margin-top: 0.75rem;
+  padding: 0.6rem 1.5rem;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* ── Pantry page ──────────────────────────────────────────────────────────── */
 .add-form {
   display: flex;
   gap: 0.5rem;
@@ -158,6 +231,7 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
 }
 .add-form input {
   flex: 1;
+  min-width: 0;
   padding: 0.6rem 0.75rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -173,6 +247,7 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9rem;
+  white-space: nowrap;
 }
 .add-form button:disabled { opacity: 0.5; cursor: not-allowed; }
 .staple-list {
@@ -198,11 +273,11 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   font-size: 1.1rem;
   cursor: pointer;
   padding: 0 0.25rem;
+  flex-shrink: 0;
 }
 .remove-btn:hover { color: #dc2626; }
-.empty-state { color: #9ca3af; font-size: 0.9rem; }
 
-/* Store badge on CapturePage */
+/* ── Store badge ──────────────────────────────────────────────────────────── */
 .store-badge {
   display: inline-flex;
   align-items: center;
@@ -231,7 +306,7 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   padding: 0;
 }
 
-/* Settings page */
+/* ── Settings page ────────────────────────────────────────────────────────── */
 .settings-page { max-width: 480px; }
 .settings-form { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
 .settings-field { display: flex; flex-direction: column; gap: 0.5rem; }
@@ -275,4 +350,17 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
   font-size: 0.95rem;
   font-weight: 600;
   align-self: flex-start;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .nav { padding: 0.65rem 1rem; }
+  .nav-links button { padding: 0.35rem 0.55rem; font-size: 0.75rem; }
+  .main { padding: 1.25rem 1rem; }
+  .url-form { flex-direction: column; }
+  .url-form button { width: 100%; }
+  .item-row { padding: 0.6rem 0.6rem; gap: 0.4rem; }
+  .item-qty button { width: 26px; height: 26px; }
+  .store-grid { grid-template-columns: repeat(2, 1fr); }
+  .list-header { flex-direction: column; gap: 0.25rem; }
 }

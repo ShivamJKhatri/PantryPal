@@ -9,6 +9,8 @@ function storeDisplayName(storeId: string): string {
 interface Props {
   list: RecipeShoppingList | null
   staples: PantryStaple[]
+  onAddToPantry: (label: string) => void
+  onNewRecipe: () => void
 }
 
 function applyPantryExclusions(
@@ -17,7 +19,9 @@ function applyPantryExclusions(
 ): RecipeShoppingListItem[] {
   const stapleNames = new Set(staples.map((s) => s.label.toLowerCase()))
   return items.map((item) =>
-    stapleNames.has(item.ingredientName.toLowerCase()) ? { ...item, excluded: true, quantityToBuy: 0, lineTotal: 0 } : item,
+    stapleNames.has(item.ingredientName.toLowerCase())
+      ? { ...item, excluded: true, quantityToBuy: 0, lineTotal: 0 }
+      : item,
   )
 }
 
@@ -25,7 +29,7 @@ function calcTotal(items: RecipeShoppingListItem[]): number {
   return Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100
 }
 
-export default function ShoppingListPage({ list, staples }: Props) {
+export default function ShoppingListPage({ list, staples, onAddToPantry, onNewRecipe }: Props) {
   const [items, setItems] = useState<RecipeShoppingListItem[]>([])
 
   useEffect(() => {
@@ -34,8 +38,11 @@ export default function ShoppingListPage({ list, staples }: Props) {
 
   if (!list) {
     return (
-      <div className="empty-state">
-        <p>No shopping list yet. Add a recipe to get started.</p>
+      <div className="empty-state-page">
+        <p className="empty-icon">🛒</p>
+        <p className="empty-title">No shopping list yet</p>
+        <p className="empty-sub">Add a recipe URL or screenshot to get started.</p>
+        <button className="primary-btn" onClick={onNewRecipe}>Add Recipe</button>
       </div>
     )
   }
@@ -108,15 +115,31 @@ export default function ShoppingListPage({ list, staples }: Props) {
                 <span>{item.quantityToBuy}</span>
                 <button onClick={() => changeQty(item.id, 1)}>+</button>
               </div>
-              <span className="item-price">${item.lineTotal.toFixed(2)}</span>
+              <div className="item-right">
+                <span className="item-price">${item.lineTotal.toFixed(2)}</span>
+                <button
+                  className="pantry-btn"
+                  title="Save to pantry"
+                  onClick={() => { onAddToPantry(item.ingredientName); toggleExclude(item.id) }}
+                >
+                  + pantry
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
 
+      {active.length === 0 && excluded.length > 0 && (
+        <div className="empty-state-page">
+          <p className="empty-title">Everything is in your pantry!</p>
+          <p className="empty-sub">All items are excluded. Check the section below to add any back.</p>
+        </div>
+      )}
+
       {notFound.length > 0 && (
         <details className="section-details">
-          <summary>Not found in store ({notFound.length})</summary>
+          <summary>Not found in catalog ({notFound.length})</summary>
           <ul className="item-list muted">
             {notFound.map((item) => (
               <li key={item.id} className="item-row">
@@ -153,6 +176,8 @@ export default function ShoppingListPage({ list, staples }: Props) {
         <span>Estimated total</span>
         <strong>${total.toFixed(2)}</strong>
       </div>
+
+      <button className="new-recipe-btn" onClick={onNewRecipe}>+ Add another recipe</button>
     </div>
   )
 }
