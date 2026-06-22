@@ -1,16 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CapturePage from './pages/CapturePage.tsx'
 import ShoppingListPage from './pages/ShoppingListPage.tsx'
 import PantryPage from './pages/PantryPage.tsx'
+import SettingsPage from './pages/SettingsPage.tsx'
+import { useUserPrefs } from './hooks/useUserPrefs.ts'
 import type { PantryStaple, RecipeShoppingList } from './types/models.ts'
-import { mockPantryStaples } from './data/mock-data.ts'
 
-export type Page = 'capture' | 'list' | 'pantry'
+const PANTRY_STORAGE_KEY = 'pantrypal_staples'
+
+function loadStaples(): PantryStaple[] {
+  try {
+    const raw = localStorage.getItem(PANTRY_STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as PantryStaple[]) : []
+  } catch {
+    return []
+  }
+}
+
+export type Page = 'capture' | 'list' | 'pantry' | 'settings'
 
 export default function App() {
-  const [page, setPage] = useState<Page>('capture')
+  const { prefs, setPrefs, hasPrefs } = useUserPrefs()
+  const [page, setPage] = useState<Page>(hasPrefs ? 'capture' : 'settings')
   const [shoppingList, setShoppingList] = useState<RecipeShoppingList | null>(null)
-  const [staples, setStaples] = useState<PantryStaple[]>(mockPantryStaples)
+  const [staples, setStaples] = useState<PantryStaple[]>(loadStaples)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(PANTRY_STORAGE_KEY, JSON.stringify(staples))
+    } catch {
+      // storage full or blocked — ignore
+    }
+  }, [staples])
 
   function addStaple(label: string) {
     const staple: PantryStaple = {
@@ -25,6 +46,8 @@ export default function App() {
   function removeStaple(id: string) {
     setStaples((prev) => prev.filter((s) => s.id !== id))
   }
+
+  const isOnboarding = !hasPrefs && page === 'settings'
 
   return (
     <div className="app">
@@ -50,16 +73,24 @@ export default function App() {
           >
             My Pantry
           </button>
+          <button
+            className={page === 'settings' ? 'active' : ''}
+            onClick={() => setPage('settings')}
+          >
+            Settings
+          </button>
         </div>
       </nav>
 
       <main className="main">
         {page === 'capture' && (
           <CapturePage
+            prefs={prefs}
             onListReady={(list) => {
               setShoppingList(list)
               setPage('list')
             }}
+            onGoToSettings={() => setPage('settings')}
           />
         )}
         {page === 'list' && (
@@ -67,6 +98,16 @@ export default function App() {
         )}
         {page === 'pantry' && (
           <PantryPage staples={staples} onAdd={addStaple} onRemove={removeStaple} />
+        )}
+        {page === 'settings' && (
+          <SettingsPage
+            prefs={prefs}
+            isOnboarding={isOnboarding}
+            onSave={(next) => {
+              setPrefs(next)
+              setPage('capture')
+            }}
+          />
         )}
       </main>
     </div>

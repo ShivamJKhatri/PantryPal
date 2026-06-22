@@ -4,6 +4,8 @@ import { buildShoppingList } from './_lib/build-shopping-list.js'
 
 type ParseUrlBody = {
   url?: string
+  storeId?: string
+  zipCode?: string
 }
 
 function readBody(request: VercelRequest): ParseUrlBody {
@@ -35,7 +37,12 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
   try {
     const extracted = await parseRecipeFromUrl(url)
-    const list = await buildShoppingList(extracted, { sourceType: 'url', sourceUrl: url })
+    const list = await buildShoppingList(extracted, {
+      sourceType: 'url',
+      sourceUrl: url,
+      storeId: body.storeId,
+      zipCode: body.zipCode,
+    })
     response.status(200).json(list)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'

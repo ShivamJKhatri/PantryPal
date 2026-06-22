@@ -201,3 +201,78 @@ h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
 }
 .remove-btn:hover { color: #dc2626; }
 .empty-state { color: #9ca3af; font-size: 0.9rem; }
+
+/* Store badge on CapturePage */
+.store-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 20px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  color: #166534;
+  margin-bottom: 1.25rem;
+}
+.store-badge.warn {
+  background: #fefce8;
+  border-color: #fde68a;
+  color: #92400e;
+}
+.link-btn {
+  background: none;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* Settings page */
+.settings-page { max-width: 480px; }
+.settings-form { display: flex; flex-direction: column; gap: 1.5rem; margin-top: 1.5rem; }
+.settings-field { display: flex; flex-direction: column; gap: 0.5rem; }
+.settings-field label { font-size: 0.875rem; font-weight: 600; color: #374151; }
+.settings-field input {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  max-width: 160px;
+  outline: none;
+}
+.settings-field input:focus { border-color: #111827; }
+.field-error { font-size: 0.8rem; color: #dc2626; }
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.store-btn {
+  padding: 0.6rem 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+  transition: border-color 0.1s, background 0.1s;
+}
+.store-btn.selected {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+.save-btn {
+  padding: 0.7rem 1.5rem;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  align-self: flex-start;
+}

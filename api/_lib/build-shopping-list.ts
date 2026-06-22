@@ -11,6 +11,8 @@ const DEFAULT_USER_ID = 'user-1'
 export type BuildOptions = {
   sourceType: 'url' | 'screenshot'
   sourceUrl?: string
+  storeId?: string
+  zipCode?: string
 }
 
 export async function buildShoppingList(
@@ -62,8 +64,8 @@ export async function buildShoppingList(
     recipeId,
     recipeTitle: extracted.title,
     sourceUrl: options.sourceUrl,
-    storeId: DEFAULT_STORE_ID,
-    zipCode: DEFAULT_ZIP,
+    storeId: options.storeId ?? DEFAULT_STORE_ID,
+    zipCode: options.zipCode ?? DEFAULT_ZIP,
     estimatedTotal: Math.round(estimatedTotal * 100) / 100,
     currency: 'USD',
     createdAt: now,

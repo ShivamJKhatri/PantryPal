@@ -5,6 +5,8 @@ import { buildShoppingList } from './_lib/build-shopping-list.js'
 type ParseScreenshotBody = {
   imageBase64?: string
   mediaType?: string
+  storeId?: string
+  zipCode?: string
 }
 
 function readBody(request: VercelRequest): ParseScreenshotBody {
@@ -37,7 +39,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
     }
 
     const { recipe } = await extractRecipeFromImage(imageBytes, mediaType)
-    const list = await buildShoppingList(recipe, { sourceType: 'screenshot' })
+    const list = await buildShoppingList(recipe, {
+      sourceType: 'screenshot',
+      storeId: body.storeId,
+      zipCode: body.zipCode,
+    })
     response.status(200).json(list)
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'

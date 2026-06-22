@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react'
 import type { PantryStaple, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
+import { STORE_OPTIONS } from './SettingsPage.tsx'
+
+function storeDisplayName(storeId: string): string {
+  return STORE_OPTIONS.find((s) => s.id === storeId)?.name ?? storeId
+}
 
 interface Props {
   list: RecipeShoppingList | null
@@ -80,7 +85,7 @@ export default function ShoppingListPage({ list, staples }: Props) {
           </a>
         )}
       </div>
-      <p className="subtitle">Kroger · {list.zipCode}</p>
+      <p className="subtitle">{storeDisplayName(list.storeId)} · {list.zipCode}</p>
 
       {active.length > 0 && (
         <ul className="item-list">

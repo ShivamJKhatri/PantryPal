@@ -1,8 +1,6 @@
 import type { RecipeShoppingList } from '../types/models.ts'
-import { buildMockShoppingList } from '../data/mock-data.ts'
+import type { UserPrefs } from '../hooks/useUserPrefs.ts'
 
-// In dev (no VITE_API_URL), calls hit the Vite dev server which proxies to /api/*
-// In production, Vercel routes /api/* to serverless functions automatically
 const API_BASE = '/api'
 
 function fileToBase64(file: File): Promise<string> {
@@ -17,16 +15,11 @@ function fileToBase64(file: File): Promise<string> {
   })
 }
 
-export async function extractRecipeFromUrl(url: string): Promise<RecipeShoppingList> {
-  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
-    await new Promise((r) => setTimeout(r, 1200)) // simulate latency
-    return buildMockShoppingList(url)
-  }
-
+export async function extractRecipeFromUrl(url: string, prefs?: UserPrefs): Promise<RecipeShoppingList> {
   const res = await fetch(`${API_BASE}/parse-url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, storeId: prefs?.storeId, zipCode: prefs?.zipCode }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
@@ -35,17 +28,12 @@ export async function extractRecipeFromUrl(url: string): Promise<RecipeShoppingL
   return res.json() as Promise<RecipeShoppingList>
 }
 
-export async function extractRecipeFromScreenshot(file: File): Promise<RecipeShoppingList> {
-  if (import.meta.env.DEV && !import.meta.env.VITE_USE_REAL_API) {
-    await new Promise((r) => setTimeout(r, 1500))
-    return buildMockShoppingList()
-  }
-
+export async function extractRecipeFromScreenshot(file: File, prefs?: UserPrefs): Promise<RecipeShoppingList> {
   const imageBase64 = await fileToBase64(file)
   const res = await fetch(`${API_BASE}/parse-screenshot`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ imageBase64, mediaType: file.type || 'image/jpeg' }),
+    body: JSON.stringify({ imageBase64, mediaType: file.type || 'image/jpeg', storeId: prefs?.storeId, zipCode: prefs?.zipCode }),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }))
