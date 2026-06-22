@@ -29,7 +29,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
   }
 
   try {
-    new URL(url) // validate before hitting network
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      response.status(400).json({ error: 'URL must use http or https' })
+      return
+    }
   } catch {
     response.status(400).json({ error: 'Invalid URL' })
     return

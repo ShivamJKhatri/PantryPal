@@ -72,7 +72,7 @@ export default function ShoppingListPage({ list, staples }: Props) {
 
   const active = items.filter((i) => !i.excluded && !i.notFound)
   const excluded = items.filter((i) => i.excluded)
-  const notFound = items.filter((i) => i.notFound)
+  const notFound = items.filter((i) => i.notFound && !i.excluded)
   const total = calcTotal(items)
 
   return (

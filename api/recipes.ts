@@ -1,24 +1,34 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { eq } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/node-postgres'
-
-import { getPool } from './_lib/pool.js'
+import { getDb } from './_lib/db.js'
 import { recipeIngredients, recipes } from './_lib/schema.js'
 
-export default async function handler(_request: VercelRequest, response: VercelResponse) {
+export default async function handler(request: VercelRequest, response: VercelResponse) {
+  if (request.method !== 'GET') {
+    response.setHeader('Allow', 'GET')
+    response.status(405).json({ error: 'Method not allowed' })
+    return
+  }
+
   try {
-    const db = drizzle(getPool())
+    const db = getDb()
+    const recipeId = typeof request.query.recipeId === 'string' ? request.query.recipeId : undefined
 
-    const allRecipes = await db.select().from(recipes)
-    const ingredients = await db
-      .select()
-      .from(recipeIngredients)
-      .where(eq(recipeIngredients.recipeId, 'rec-1'))
-
-    response.status(200).json({
-      recipes: allRecipes,
-      ingredients,
-    })
+    if (recipeId) {
+      const [recipe] = await db.select().from(recipes).where(eq(recipes.id, recipeId))
+      if (!recipe) {
+        response.status(404).json({ error: 'Recipe not found' })
+        return
+      }
+      const ingredients = await db
+        .select()
+        .from(recipeIngredients)
+        .where(eq(recipeIngredients.recipeId, recipeId))
+      response.status(200).json({ recipe, ingredients })
+    } else {
+      const allRecipes = await db.select().from(recipes)
+      response.status(200).json({ recipes: allRecipes })
+    }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error'
     response.status(500).json({ error: message })
