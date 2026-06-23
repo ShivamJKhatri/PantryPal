@@ -85,6 +85,8 @@ function ItemRow({
   onChangeQty,
   onAddToPantry,
   shoppingMode = false,
+  isBought = false,
+  onBuy,
 }: {
   item: RecipeShoppingListItem
   index: number
@@ -93,6 +95,8 @@ function ItemRow({
   onChangeQty: (id: string, delta: number) => void
   onAddToPantry: (label: string) => void
   shoppingMode?: boolean
+  isBought?: boolean
+  onBuy?: () => void
 }) {
   const { name, detail } = getItemDisplay(item)
 
@@ -100,15 +104,15 @@ function ItemRow({
     <li
       key={item.id}
       ref={flipRef(item.id)}
-      className="item-row"
+      className={`item-row${isBought ? ' item-row--bought' : ''}`}
       style={{ '--i': index } as React.CSSProperties}
     >
       <button
         type="button"
-        className={`exclude-btn press${shoppingMode ? ' shopping-mode' : ''}`}
-        title={shoppingMode ? 'Mark as bought & save to pantry' : 'Remove from list'}
+        className={`exclude-btn press${isBought ? ' bought' : shoppingMode ? ' shopping-mode' : ''}`}
+        title={isBought ? 'Bought' : shoppingMode ? 'Mark as bought & save to pantry' : 'Remove from list'}
         onClick={() => {
-          if (shoppingMode) onAddToPantry(item.ingredientName)
+          if (onBuy) { onBuy(); return }
           onToggleExclude(item.id)
         }}
       >
@@ -173,12 +177,17 @@ function ItemList({
   onRemoveFromPantry?: (stapleId: string) => void
 }) {
   const [localItems, setLocalItems] = useState(() => applyPantryExclusions(items, staples))
+  const [boughtIds, setBoughtIds] = useState<Set<string>>(new Set())
   const itemIds = useMemo(() => localItems.map((i) => i.id), [localItems])
   const flipRef = useFlip(itemIds)
 
   useEffect(() => {
     setLocalItems(applyPantryExclusions(items, staples))
   }, [items, staples])
+
+  useEffect(() => {
+    if (!shoppingMode) setBoughtIds(new Set())
+  }, [shoppingMode])
 
   function updateItems(updater: (prev: RecipeShoppingListItem[]) => RecipeShoppingListItem[]) {
     setLocalItems((prev) => {
@@ -239,6 +248,20 @@ function ItemList({
     )
   }
 
+  function buyItem(id: string, ingredientName: string) {
+    setBoughtIds((prev) => { const next = new Set(prev); next.add(id); return next })
+    onAddToPantry(ingredientName)
+  }
+
+  function ranOut(item: RecipeShoppingListItem, stapleId: string) {
+    onRemoveFromPantry?.(stapleId)
+    const qty = Math.max(1, item.quantityToBuy || 1)
+    const restored = { ...item, excluded: false, quantityToBuy: qty, lineTotal: Math.round(qty * item.price * 100) / 100 }
+    const next = localItems.map((i) => (i.id === item.id ? restored : i))
+    setLocalItems(next)
+    onItemsChange(next)
+  }
+
   const active = localItems.filter((i) => !i.excluded && !i.notFound)
   const excluded = localItems.filter((i) => i.excluded)
   const notFound = localItems.filter((i) => i.notFound && !i.excluded)
@@ -257,6 +280,8 @@ function ItemList({
               onChangeQty={changeQty}
               onAddToPantry={onAddToPantry}
               shoppingMode={shoppingMode}
+              isBought={boughtIds.has(item.id)}
+              onBuy={shoppingMode ? () => buyItem(item.id, item.ingredientName) : undefined}
             />
           ))}
         </ul>
@@ -333,10 +358,7 @@ function ItemList({
                           type="button"
                           className="remove-pantry-btn press"
                           title="Remove from pantry — ran out?"
-                          onClick={() => {
-                            onRemoveFromPantry?.(matchingStaple.id)
-                            toggleExclude(item.id)
-                          }}
+                          onClick={() => ranOut(item, matchingStaple.id)}
                         >
                           Ran out
                         </button>

@@ -574,6 +574,10 @@ h1 {
 .shopping-toggle-btn.active { background: var(--accent); color: #fff; }
 .exclude-btn.shopping-mode { background: var(--surface-2); border-color: var(--border); color: var(--text-subtle); }
 .exclude-btn.shopping-mode:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.exclude-btn.bought { background: var(--accent); border-color: var(--accent); color: #fff; pointer-events: none; }
+
+.item-row--bought { opacity: 0.45; }
+.item-row--bought .item-name { text-decoration: line-through; }
 
 .item-actions {
   grid-area: actions;
