@@ -203,3 +203,17 @@ export function matchIngredient(rawText: string): CatalogEntry | null {
   // Require at least 3 chars matched to avoid spurious matches
   return bestScore >= 3 ? best : null
 }
+
+export function suggestSubstitutes(rawText: string, limit = 3): CatalogEntry[] {
+  const words = rawText.toLowerCase().split(/\W+/).filter((w) => w.length >= 3)
+  if (!words.length) return []
+  return CATALOG.map((entry) => {
+    const kws = entry.keywords.join(' ').toLowerCase()
+    const score = words.filter((w) => kws.includes(w)).length
+    return { entry, score }
+  })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.entry)
+}

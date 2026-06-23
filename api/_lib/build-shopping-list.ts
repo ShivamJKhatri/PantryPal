@@ -24,7 +24,7 @@ export async function buildShoppingList(
   const now = new Date().toISOString()
 
   const items: RecipeShoppingListItem[] = extracted.ingredients.map((ing) =>
-    itemFromIngredient(ing.rawText),
+    itemFromIngredient(ing.rawText, ing.confidence),
   )
 
   const estimatedTotal = items.reduce((sum, item) => sum + item.lineTotal, 0)

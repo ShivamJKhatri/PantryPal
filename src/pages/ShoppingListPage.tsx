@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
+import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem, SuggestionItem } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
 import { matchIngredientLine } from '../services/api.ts'
 import { showToast } from '../hooks/useToast.ts'
@@ -109,7 +109,14 @@ function ItemRow({
         <IconCheck size={14} />
       </button>
       <div className="item-info">
-        <span className="item-name">{name}</span>
+        <div className="item-name-row">
+          <span className="item-name">{name}</span>
+          {item.confidence !== undefined && item.confidence < 0.75 && (
+            <span className="item-confidence-warn" title={`Low extraction confidence (${Math.round(item.confidence * 100)}%) — double-check this ingredient`}>
+              ⚠
+            </span>
+          )}
+        </div>
         {detail && <span className="item-detail">{detail}</span>}
         {item.aisle && <span className="item-aisle">{item.aisle}</span>}
       </div>
@@ -188,6 +195,26 @@ function ItemList({
     )
   }
 
+  function acceptSuggestion(itemId: string, suggestion: SuggestionItem) {
+    updateItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== itemId) return item
+        return {
+          ...item,
+          productId: suggestion.productId,
+          productName: suggestion.productName,
+          ingredientName: suggestion.productName,
+          aisle: suggestion.aisle,
+          price: suggestion.price,
+          quantityToBuy: 1,
+          lineTotal: suggestion.price,
+          notFound: false,
+          suggestions: undefined,
+        }
+      }),
+    )
+  }
+
   function changeQty(id: string, delta: number) {
     updateItems((prev) =>
       prev.map((item) => {
@@ -238,9 +265,25 @@ function ItemList({
           <summary>Not found in catalog ({notFound.length})</summary>
           <ul className="item-list muted">
             {notFound.map((item) => (
-              <li key={item.id} className="item-row">
-                <span className="item-name">{item.rawText}</span>
-                <span className="item-price">—</span>
+              <li key={item.id} className="item-row item-row--not-found">
+                <div className="item-info">
+                  <span className="item-name">{item.rawText}</span>
+                  {item.suggestions && item.suggestions.length > 0 && (
+                    <div className="item-suggestions">
+                      <span className="item-suggestions__label">Try instead:</span>
+                      {item.suggestions.map((s) => (
+                        <button
+                          key={s.productId}
+                          type="button"
+                          className="suggestion-chip press"
+                          onClick={() => acceptSuggestion(item.id, s)}
+                        >
+                          {s.productName} · ${s.price.toFixed(2)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

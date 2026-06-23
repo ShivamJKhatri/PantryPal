@@ -519,6 +519,53 @@ h1 {
   font-weight: 500;
 }
 
+.item-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.item-confidence-warn {
+  font-size: 11px;
+  color: var(--warning, #d97706);
+  flex-shrink: 0;
+}
+
+.item-row--not-found {
+  grid-template-columns: 1fr;
+  grid-template-areas: "info";
+}
+
+.item-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-1);
+  margin-top: var(--s-2);
+}
+
+.item-suggestions__label {
+  font-size: 10px;
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+
+.suggestion-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid var(--accent-soft);
+  border-radius: var(--r-pill);
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.suggestion-chip:hover { background: var(--accent-ring); border-color: var(--accent); }
+
 .item-actions {
   grid-area: actions;
   display: flex;
