@@ -27,12 +27,35 @@ const MOCK_LIST = {
 }
 
 const browser = await chromium.launch({ headless: true })
-const context = await browser.newContext()
+const context = await browser.newContext({ viewport: { width: 390, height: 844 } })
 const page = await context.newPage()
 
-// Intercept API calls so tests work without a running backend
 await page.route('**/api/parse-url', route => {
   route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_LIST) })
+})
+await page.route('**/api/match-item', route => {
+  const body = JSON.parse(route.request().postData() ?? '{}')
+  const raw = body.rawText ?? 'item'
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      item: {
+        id: 'manual-1',
+        ingredientName: 'butter',
+        rawText: raw,
+        productId: 'p-butter',
+        productName: 'Unsalted Butter',
+        aisle: 'Dairy',
+        price: 4.49,
+        quantityToBuy: 1,
+        lineTotal: 4.49,
+        excluded: false,
+        hasLeftovers: true,
+        notFound: false,
+      },
+    }),
+  })
 })
 await page.route('**/api/parse-screenshot', route => {
   route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_LIST) })
@@ -42,6 +65,10 @@ const consoleErrors = []
 page.on('console', msg => { if (msg.type() === 'error') { consoleErrors.push(msg.text()) } })
 page.on('pageerror', err => { consoleErrors.push(err.message) })
 
+async function clickNav(index) {
+  await page.locator('.bottom-nav__tab').nth(index).click()
+}
+
 // ── 1. App loads ─────────────────────────────────────────────────────────────
 console.log('\n[1] App loads')
 try {
@@ -50,17 +77,11 @@ try {
   if (title === 'PantryPal') { ok('title is PantryPal') } else { fail('title', 'got ' + title) }
 } catch (e) { fail('page load', e.message) }
 
-// ── 2. Nav ────────────────────────────────────────────────────────────────────
-console.log('\n[2] Nav renders')
+// ── 2. Nav (hidden during onboarding) ─────────────────────────────────────────
+console.log('\n[2] Bottom nav hidden during onboarding')
 try {
-  const brand = await page.textContent('.nav-brand')
-  if (brand && brand.trim() === 'PantryPal') { ok('brand text') } else { fail('brand', brand) }
-
-  const buttons = await page.$$('.nav-links button')
-  if (buttons.length === 4) { ok('4 nav buttons') } else { fail('nav buttons', 'got ' + buttons.length) }
-
-  const listDisabled = await page.$eval('.nav-links button:nth-child(2)', b => b.disabled)
-  if (listDisabled) { ok('Shopping List button disabled before recipe added') } else { fail('list btn disabled', 'not disabled') }
+  const tabsDuringOnboarding = await page.$$('.bottom-nav__tab')
+  if (tabsDuringOnboarding.length === 0) { ok('nav hidden during onboarding') } else { fail('nav hidden', 'tabs visible') }
 } catch (e) { fail('nav', e.message) }
 
 // ── 3. Onboarding / Settings page ────────────────────────────────────────────
@@ -73,7 +94,6 @@ try {
     fail('onboarding h1', 'got: ' + h1)
   }
 
-  // Pick Kroger (first store button)
   const storeBtn = await page.$('.store-btn')
   if (storeBtn) {
     await storeBtn.click()
@@ -82,26 +102,33 @@ try {
     fail('store buttons', 'none found')
   }
 
+  await page.click('button[type="submit"]')
+  await page.waitForSelector('#zip', { timeout: 3000 })
+  ok('onboarding step 2 shown')
+
   await page.fill('#zip', '10001')
-  await page.click('.save-btn')
-  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('Add a Recipe'), { timeout: 3000 })
+  await page.click('button[type="submit"]')
+  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.toLowerCase().includes('add a recipe'), { timeout: 3000 })
   ok('onboarding saved → navigated to capture page')
+
+  const tabs = await page.$$('.bottom-nav__tab')
+  if (tabs.length === 4) { ok('4 nav tabs after onboarding') } else { fail('nav tabs after onboarding', 'got ' + tabs.length) }
 } catch (e) { fail('onboarding', e.message) }
 
 // ── 4. Capture page ───────────────────────────────────────────────────────────
 console.log('\n[4] Capture page')
 try {
   const h1 = await page.textContent('h1')
-  if (h1 && h1.includes('Add a Recipe')) { ok('h1: ' + h1.trim()) } else { fail('h1', h1) }
+  if (h1 && h1.toLowerCase().includes('add a recipe')) { ok('h1: ' + h1.trim()) } else { fail('h1', h1) }
 
   const urlInput = await page.$('input[type="url"]')
   if (urlInput) { ok('URL input present') } else { fail('URL input', 'missing') }
 
-  const uploadBtn = await page.$('.upload-btn')
-  if (uploadBtn) { ok('Upload Screenshot button present') } else { fail('upload btn', 'missing') }
+  const tabs = await page.$$('.tabs__btn')
+  if (tabs.length === 2) { ok('capture tabs present') } else { fail('capture tabs', 'got ' + tabs.length) }
 
-  const badge = await page.$('.store-badge')
-  if (badge) { ok('store badge shown') } else { fail('store badge', 'missing') }
+  const chip = await page.$('.store-chip')
+  if (chip) { ok('store chip shown') } else { fail('store chip', 'missing') }
 } catch (e) { fail('capture page', e.message) }
 
 // ── 5. Submit disabled when empty ────────────────────────────────────────────
@@ -121,7 +148,7 @@ try {
   await page.click('button[type="submit"]')
   await page.waitForFunction(() => {
     const h = document.querySelector('h1')
-    return h && !h.textContent.includes('Add a Recipe')
+    return h && h.textContent?.includes('Test Pasta')
   }, { timeout: 5000 })
   const listH1 = await page.textContent('h1')
   ok('navigated to list: ' + (listH1 && listH1.trim()))
@@ -133,29 +160,46 @@ try {
   const items = await page.$$('.item-row')
   if (items.length > 0) { ok(items.length + ' items in list') } else { fail('items', 'none found') }
 
-  const total = await page.textContent('.list-total strong')
-  if (total && total.includes('$')) { ok('total shows: ' + total.trim()) } else { fail('total', total) }
+  const total = await page.textContent('.list-total-bar__amount')
+  await page.waitForTimeout(400)
+  const totalSettled = await page.textContent('.list-total-bar__amount')
+  if (totalSettled && totalSettled.includes('$') && !totalSettled.includes('-')) {
+    ok('total shows: ' + totalSettled.trim())
+  } else {
+    fail('total', totalSettled ?? total)
+  }
 
   const sourceLink = await page.$('.source-link')
   if (sourceLink) { ok('source link present') } else { fail('source link', 'missing') }
 
-  const subtitle = await page.textContent('.subtitle')
-  if (subtitle && subtitle.includes('Kroger') && subtitle.includes('10001')) {
-    ok('store + zip in subtitle: ' + subtitle.trim())
+  const meta = await page.textContent('.list-meta')
+  if (meta && meta.includes('Kroger') && meta.includes('10001')) {
+    ok('store + zip in meta: ' + meta.trim())
   } else {
-    fail('store/zip subtitle', 'got: ' + subtitle)
+    fail('store/zip meta', 'got: ' + meta)
   }
 } catch (e) { fail('list content', e.message) }
+
+// ── 7b. Manual add item ───────────────────────────────────────────────────────
+console.log('\n[7b] Manual add item')
+try {
+  const countBefore = (await page.$$('.item-row')).length
+  await page.fill('.manual-add input', '1 lb butter')
+  await page.click('.manual-add button[type="submit"]')
+  await page.waitForTimeout(500)
+  const countAfter = (await page.$$('.item-row')).length
+  if (countAfter > countBefore) { ok('manual item added') } else { fail('manual add', 'count unchanged') }
+} catch (e) { fail('manual add', e.message) }
 
 // ── 8. Exclude toggle ─────────────────────────────────────────────────────────
 console.log('\n[8] Exclude/include toggle')
 try {
-  const totalBefore = await page.textContent('.list-total strong')
+  const totalBefore = await page.textContent('.list-total-bar__amount')
   const firstExclude = await page.$('.exclude-btn:not(.excluded)')
   if (firstExclude) {
     await firstExclude.click()
-    await page.waitForTimeout(300)
-    const totalAfter = await page.textContent('.list-total strong')
+    await page.waitForTimeout(400)
+    const totalAfter = await page.textContent('.list-total-bar__amount')
     if (totalBefore !== totalAfter) {
       ok('total changed after exclude: ' + totalBefore + ' -> ' + totalAfter)
     } else {
@@ -166,15 +210,16 @@ try {
   }
 } catch (e) { fail('exclude toggle', e.message) }
 
-// ── 9. Quantity +/- ───────────────────────────────────────────────────────────
+// ── 9. Quantity +/- ─────────────────────────────────────────────────────────
 console.log('\n[9] Quantity +/- controls')
 try {
-  const plusBtns = await page.$$('.item-qty button:last-child')
-  if (plusBtns.length > 0) {
-    const totalBefore = await page.textContent('.list-total strong')
-    await plusBtns[0].click()
-    await page.waitForTimeout(300)
-    const totalAfter = await page.textContent('.list-total strong')
+  const plusBtns = await page.locator('.item-qty .icon-btn').all()
+  const plusBtn = plusBtns[plusBtns.length - 1]
+  if (plusBtn) {
+    const totalBefore = await page.textContent('.list-total-bar__amount')
+    await plusBtn.click()
+    await page.waitForTimeout(400)
+    const totalAfter = await page.textContent('.list-total-bar__amount')
     if (totalBefore !== totalAfter) {
       ok('total changed after qty+1: ' + totalBefore + ' -> ' + totalAfter)
     } else {
@@ -188,22 +233,25 @@ try {
 // ── 10. Pantry page ────────────────────────────────────────────────────────────
 console.log('\n[10] Pantry page')
 try {
-  await page.click('.nav-links button:nth-child(3)')
+  await clickNav(2)
   await page.waitForSelector('h1', { timeout: 3000 })
   const h1 = await page.textContent('h1')
-  if (h1 && h1.includes('My Pantry')) { ok('pantry h1: ' + h1.trim()) } else { fail('pantry h1', h1) }
+  if (h1 && h1.toLowerCase().includes('pantry')) { ok('pantry h1: ' + h1.trim()) } else { fail('pantry h1', h1) }
+
+  const chips = await page.$$('.chip')
+  if (chips.length >= 10) { ok(chips.length + ' quick-add chips') } else { fail('chips', 'got ' + chips.length) }
 
   const countBefore = (await page.$$('.staple-row')).length
   await page.fill('.add-form input', 'butter')
-  await page.click('.add-form button')
-  await page.waitForTimeout(200)
+  await page.click('.add-form button[type="submit"]')
+  await page.waitForTimeout(300)
   const countAfter = (await page.$$('.staple-row')).length
   if (countAfter > countBefore) { ok('staple added') } else { fail('add staple', 'count unchanged') }
 
-  const removeBtn = await page.$('.remove-btn')
-  if (removeBtn) {
+  const removeBtn = await page.locator('.staple-row .icon-btn').first()
+  if (await removeBtn.count()) {
     await removeBtn.click()
-    await page.waitForTimeout(200)
+    await page.waitForTimeout(300)
     const countAfterRemove = (await page.$$('.staple-row')).length
     if (countAfterRemove < countAfter) { ok('staple removed') } else { fail('remove staple', 'count unchanged') }
   } else {
@@ -214,7 +262,7 @@ try {
 // ── 11. Settings page ─────────────────────────────────────────────────────────
 console.log('\n[11] Settings page')
 try {
-  await page.click('.nav-links button:nth-child(4)')
+  await clickNav(3)
   await page.waitForSelector('.settings-form', { timeout: 3000 })
   const h1 = await page.textContent('h1')
   if (h1 && h1.includes('Settings')) { ok('settings h1: ' + h1.trim()) } else { fail('settings h1', h1) }
@@ -231,11 +279,11 @@ try {
   if (zipVal === '10001') { ok('zip persisted: ' + zipVal) } else { fail('zip persisted', 'got: ' + zipVal) }
 } catch (e) { fail('settings page', e.message) }
 
-// ── 12. Shopping List nav still enabled ───────────────────────────────────────
-console.log('\n[12] Shopping List nav enabled after recipe loaded')
+// ── 12. Shopping List nav badge ───────────────────────────────────────────────
+console.log('\n[12] Shopping List nav shows indicator after recipe loaded')
 try {
-  const listDisabled = await page.$eval('.nav-links button:nth-child(2)', b => b.disabled)
-  if (!listDisabled) { ok('Shopping List nav now enabled') } else { fail('list nav enabled', 'still disabled') }
+  const badge = await page.locator('.bottom-nav__tab').nth(1).locator('.bottom-nav__badge')
+  if (await badge.count()) { ok('list nav badge present') } else { fail('list badge', 'missing') }
 } catch (e) { fail('list nav', e.message) }
 
 // ── 13. No console errors ─────────────────────────────────────────────────────

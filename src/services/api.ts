@@ -41,3 +41,17 @@ export async function extractRecipeFromScreenshot(file: File, prefs?: UserPrefs)
   }
   return res.json() as Promise<RecipeShoppingList>
 }
+
+export async function matchIngredientLine(rawText: string): Promise<RecipeShoppingList['items'][number]> {
+  const res = await fetch(`${API_BASE}/match-item`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rawText }),
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error((err as { error?: string }).error ?? `API error ${res.status}`)
+  }
+  const data = (await res.json()) as { item: RecipeShoppingList['items'][number] }
+  return data.item
+}

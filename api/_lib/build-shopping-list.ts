@@ -1,6 +1,6 @@
 import type { RecipeShoppingList, RecipeShoppingListItem } from '../../src/types/models.js'
 import type { ExtractedRecipe } from './vision/types.js'
-import { matchIngredient } from './store-catalog.js'
+import { itemFromIngredient } from './item-from-ingredient.js'
 import { getDb } from './db.js'
 import { recipes, recipeIngredients } from './schema.js'
 
@@ -23,39 +23,9 @@ export async function buildShoppingList(
   const listId = crypto.randomUUID()
   const now = new Date().toISOString()
 
-  const items: RecipeShoppingListItem[] = extracted.ingredients.map((ing) => {
-    const match = matchIngredient(ing.rawText)
-    if (!match) {
-      return {
-        id: crypto.randomUUID(),
-        ingredientName: ing.rawText,
-        rawText: ing.rawText,
-        productId: '',
-        productName: 'Not found in store',
-        price: 0,
-        quantityToBuy: 0,
-        lineTotal: 0,
-        excluded: false,
-        hasLeftovers: false,
-        notFound: true,
-      }
-    }
-    return {
-      id: crypto.randomUUID(),
-      ingredientName: match.name,
-      rawText: ing.rawText,
-      productId: match.id,
-      productName: match.name,
-      productBrand: match.brand,
-      aisle: match.aisle,
-      price: match.price,
-      quantityToBuy: 1,
-      lineTotal: match.price,
-      excluded: false,
-      hasLeftovers: match.hasLeftovers,
-      notFound: false,
-    }
-  })
+  const items: RecipeShoppingListItem[] = extracted.ingredients.map((ing) =>
+    itemFromIngredient(ing.rawText),
+  )
 
   const estimatedTotal = items.reduce((sum, item) => sum + item.lineTotal, 0)
 
