@@ -355,6 +355,21 @@ h1 {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-ring);
 }
+.url-input {
+  width: 100%;
+  margin-bottom: var(--s-4);
+  padding: 12px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  font-size: var(--fs-sm);
+  background: var(--surface);
+  outline: none;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.url-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
 
 .photo-drop {
   display: flex;

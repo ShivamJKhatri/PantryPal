@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
 import { matchIngredientLine } from '../services/api.ts'
 import { showToast } from '../hooks/useToast.ts'
 import { getItemDisplay } from '../lib/display-item.ts'
-import { calcTotal } from '../lib/merge-items.ts'
+import { calcActiveTotal } from '../lib/merge-items.ts'
 import PageShell from '../components/PageShell.tsx'
 import Card from '../components/Card.tsx'
 import EmptyState from '../components/EmptyState.tsx'
@@ -69,6 +69,11 @@ function activeCount(items: RecipeShoppingListItem[]): number {
   return items.filter((i) => !i.excluded && !i.notFound).length
 }
 
+function recipeListStats(items: RecipeShoppingListItem[], staples: PantryStaple[]) {
+  const adjusted = applyPantryExclusions(items, staples)
+  return { count: activeCount(adjusted), total: calcActiveTotal(adjusted) }
+}
+
 function ItemRow({
   item,
   index,
@@ -85,76 +90,11 @@ function ItemRow({
   onAddToPantry: (label: string) => void
 }) {
   const { name, detail } = getItemDisplay(item)
-  const rowRef = useRef<HTMLLIElement | null>(null)
-  const infoRef = useRef<HTMLDivElement | null>(null)
-  const actionsRef = useRef<HTMLDivElement | null>(null)
-
-  useLayoutEffect(() => {
-    if (index > 1 || !rowRef.current || !infoRef.current || !actionsRef.current) return
-    const row = rowRef.current
-    const info = infoRef.current
-    const actions = actionsRef.current
-    const rowStyle = getComputedStyle(row)
-    const infoStyle = getComputedStyle(info)
-    const infoRect = info.getBoundingClientRect()
-    const actionsRect = actions.getBoundingClientRect()
-    const rowRect = row.getBoundingClientRect()
-    const cssHasFlexColumn = [...document.styleSheets].some((sheet) => {
-      try {
-        return [...sheet.cssRules].some(
-          (rule) =>
-            rule instanceof CSSStyleRule &&
-            rule.selectorText.includes('.item-info') &&
-            rule.style.flexDirection === 'column',
-        )
-      } catch {
-        return false
-      }
-    })
-    // #region agent log
-    fetch('http://127.0.0.1:7864/ingest/04d8c24f-4c41-4b8c-855e-5197f10e445f', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3159bb' },
-      body: JSON.stringify({
-        sessionId: '3159bb',
-        runId: 'pre-fix',
-        hypothesisId: 'H1-H5',
-        location: 'ShoppingListPage.tsx:ItemRow',
-        message: 'item row layout snapshot',
-        data: {
-          index,
-          viewportWidth: window.innerWidth,
-          displayData: { name, detail, aisle: item.aisle, rawText: item.rawText },
-          rowDisplay: rowStyle.display,
-          rowGridColumns: rowStyle.gridTemplateColumns,
-          infoFlexDirection: infoStyle.flexDirection,
-          infoGridColumn: infoStyle.gridColumn,
-          infoGridRow: infoStyle.gridRow,
-          actionsGridColumn: getComputedStyle(actions).gridColumn,
-          actionsGridRow: getComputedStyle(actions).gridRow,
-          cssHasItemInfoFlexColumn: cssHasFlexColumn,
-          rects: {
-            row: { w: rowRect.width, h: rowRect.height },
-            info: { left: infoRect.left, w: infoRect.width, h: infoRect.height, relLeft: infoRect.left - rowRect.left },
-            actions: { left: actionsRect.left, w: actionsRect.width, relLeft: actionsRect.left - rowRect.left },
-            gapInfoToActions: actionsRect.left - (infoRect.left + infoRect.width),
-          },
-          aisleColor: item.aisle ? getComputedStyle(info.querySelector('.item-aisle')!).color : null,
-          aisleBg: item.aisle ? getComputedStyle(info.querySelector('.item-aisle')!).backgroundColor : null,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {})
-    // #endregion
-  }, [index, name, detail, item.aisle, item.rawText])
 
   return (
     <li
       key={item.id}
-      ref={(el) => {
-        rowRef.current = el
-        flipRef(item.id)(el)
-      }}
+      ref={flipRef(item.id)}
       className="item-row"
       style={{ '--i': index } as React.CSSProperties}
     >
@@ -166,12 +106,12 @@ function ItemRow({
       >
         <IconCheck size={14} />
       </button>
-      <div className="item-info" ref={infoRef}>
+      <div className="item-info">
         <span className="item-name">{name}</span>
         {detail && <span className="item-detail">{detail}</span>}
         {item.aisle && <span className="item-aisle">{item.aisle}</span>}
       </div>
-      <div className="item-actions" ref={actionsRef}>
+      <div className="item-actions">
         <div className="item-qty">
           <IconButton
             label="Decrease quantity"
@@ -213,7 +153,7 @@ function ItemList({
   onItemsChange: (items: RecipeShoppingListItem[]) => void
   onAddToPantry: (label: string) => void
 }) {
-  const [localItems, setLocalItems] = useState(items)
+  const [localItems, setLocalItems] = useState(() => applyPantryExclusions(items, staples))
   const itemIds = useMemo(() => localItems.map((i) => i.id), [localItems])
   const flipRef = useFlip(itemIds)
   const stapleSet = stapleLabels(staples)
@@ -340,7 +280,7 @@ function ItemList({
       <div className="list-total-bar">
         <div>
           <div className="list-total-bar__meta">{active.length} items · estimated</div>
-          <div className="list-total-bar__amount">$<CountUp value={calcTotal(localItems)} /></div>
+          <div className="list-total-bar__amount">$<CountUp value={calcActiveTotal(localItems)} /></div>
           <div className="list-total-bar__disclaimer">Prices are estimates</div>
         </div>
       </div>
@@ -350,6 +290,7 @@ function ItemList({
 
 function RecipeCard({
   recipe,
+  staples,
   inCart,
   index,
   onOpen,
@@ -357,14 +298,14 @@ function RecipeCard({
   onRemoveFromCart,
 }: {
   recipe: RecipeShoppingList
+  staples: PantryStaple[]
   inCart: boolean
   index: number
   onOpen: () => void
   onAddToCart: () => void
   onRemoveFromCart: () => void
 }) {
-  const count = activeCount(recipe.items)
-  const total = calcTotal(recipe.items)
+  const { count, total } = recipeListStats(recipe.items, staples)
 
   return (
     <Card padding="none" className="recipe-card">
@@ -534,6 +475,7 @@ export default function ShoppingListPage({
 
   if (view.kind === 'detail' && selectedRecipe) {
     const inCart = cartRecipeIds.includes(selectedRecipe.id)
+    const { count: detailCount } = recipeListStats(selectedRecipe.items, staples)
 
     return (
       <PageShell
@@ -551,7 +493,7 @@ export default function ShoppingListPage({
         <div className="list-meta">
           <span>{storeDisplayName(selectedRecipe.storeId)} · {selectedRecipe.zipCode}</span>
           <span className="list-meta__sep" aria-hidden>·</span>
-          <span>{activeCount(selectedRecipe.items)} items</span>
+          <span>{detailCount} items</span>
           {selectedRecipe.sourceUrl && (
             <>
               <span className="list-meta__sep" aria-hidden>·</span>
@@ -614,6 +556,7 @@ export default function ShoppingListPage({
           <RecipeCard
             key={recipe.id}
             recipe={recipe}
+            staples={staples}
             inCart={cartRecipeIds.includes(recipe.id)}
             index={index}
             onOpen={() => setView({ kind: 'detail', recipeId: recipe.id })}

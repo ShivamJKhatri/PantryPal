@@ -5,9 +5,8 @@ import { extractRecipeFromUrl, extractRecipeFromScreenshot } from '../services/a
 import PageShell from '../components/PageShell.tsx'
 import Card from '../components/Card.tsx'
 import Button from '../components/Button.tsx'
-import { IconLink, IconCamera, IconClipboard } from '../components/icons.tsx'
+import { IconLink, IconCamera } from '../components/icons.tsx'
 import Spinner from '../components/Spinner.tsx'
-import { showToast } from '../hooks/useToast.ts'
 
 interface Props {
   prefs: UserPrefs
@@ -75,18 +74,6 @@ export default function CapturePage({ prefs, onListReady, onGoToSettings }: Prop
   async function handleUrlSubmit(e: React.FormEvent) {
     e.preventDefault()
     await submitUrl(url)
-  }
-
-  async function handlePaste() {
-    try {
-      const text = await navigator.clipboard.readText()
-      setUrl(text)
-      if (/^https?:\/\//i.test(text.trim())) {
-        await submitUrl(text)
-      }
-    } catch {
-      showToast('Could not access clipboard', 'error')
-    }
   }
 
   async function handleFile(file: File) {
@@ -159,19 +146,15 @@ export default function CapturePage({ prefs, onListReady, onGoToSettings }: Prop
 
             {tab === 'url' ? (
               <form onSubmit={handleUrlSubmit}>
-                <div className="url-row">
-                  <input
-                    ref={urlRef}
-                    type="url"
-                    placeholder="https://www.budgetbytes.com/…"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    disabled={loading}
-                  />
-                  <Button type="button" variant="secondary" size="md" onClick={() => void handlePaste()}>
-                    <IconClipboard size={16} /> Paste
-                  </Button>
-                </div>
+                <input
+                  ref={urlRef}
+                  type="url"
+                  className="url-input"
+                  placeholder="https://www.budgetbytes.com/…"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  disabled={loading}
+                />
                 <Button type="submit" fullWidth size="lg" disabled={!url.trim()}>
                   Build my list
                 </Button>
