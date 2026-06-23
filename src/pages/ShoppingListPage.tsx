@@ -84,6 +84,7 @@ function ItemRow({
   onToggleExclude,
   onChangeQty,
   onAddToPantry,
+  shoppingMode = false,
 }: {
   item: RecipeShoppingListItem
   index: number
@@ -174,7 +175,6 @@ function ItemList({
   const [localItems, setLocalItems] = useState(() => applyPantryExclusions(items, staples))
   const itemIds = useMemo(() => localItems.map((i) => i.id), [localItems])
   const flipRef = useFlip(itemIds)
-  const stapleSet = stapleLabels(staples)
 
   useEffect(() => {
     setLocalItems(applyPantryExclusions(items, staples))
