@@ -7,6 +7,7 @@
     "dev": "vite",
     "dev:vercel": "vercel dev",
     "build": "tsc && vite build",
+    "test:ui": "node scripts/test-ui.mjs",
     "preview": "vite preview",
     "db:test": "tsx scripts/test-db.ts",
     "db:generate": "drizzle-kit generate",
