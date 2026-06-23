@@ -32,3 +32,11 @@ export function mergeItems(
 export function calcTotal(items: RecipeShoppingListItem[]): number {
   return Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100
 }
+
+export function calcActiveTotal(items: RecipeShoppingListItem[]): number {
+  return Math.round(
+    items
+      .filter((i) => !i.excluded && !i.notFound)
+      .reduce((sum, item) => sum + item.lineTotal, 0) * 100,
+  ) / 100
+}
