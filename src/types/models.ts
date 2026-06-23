@@ -36,3 +36,10 @@ export type RecipeShoppingList = {
   createdAt: string
   items: RecipeShoppingListItem[]
 }
+
+/** Saved recipes + merged cart for the session */
+export type RecipeCollection = {
+  recipes: RecipeShoppingList[]
+  cartItems: RecipeShoppingListItem[]
+  cartRecipeIds: string[]
+}

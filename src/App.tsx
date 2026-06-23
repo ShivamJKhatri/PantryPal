@@ -6,8 +6,7 @@ import SettingsPage from './pages/SettingsPage.tsx'
 import BottomNav from './components/BottomNav.tsx'
 import ToastStack from './components/Toast.tsx'
 import { useUserPrefs } from './hooks/useUserPrefs.ts'
-import { useShoppingList } from './hooks/useShoppingList.ts'
-import { mergeShoppingLists } from './lib/merge-shopping-list.ts'
+import { useRecipeCollection } from './hooks/useRecipeCollection.ts'
 import { showToast } from './hooks/useToast.ts'
 import type { PantryStaple } from './types/models.ts'
 
@@ -26,7 +25,16 @@ export type Page = 'capture' | 'list' | 'pantry' | 'settings'
 
 export default function App() {
   const { prefs, setPrefs, hasPrefs } = useUserPrefs()
-  const { list: shoppingList, setList: setShoppingList } = useShoppingList()
+  const {
+    collection,
+    addRecipe,
+    updateRecipe,
+    addRecipeToCart,
+    removeRecipeFromCart,
+    updateCartItems,
+    hasRecipes,
+    cartCount,
+  } = useRecipeCollection()
   const [page, setPage] = useState<Page>(hasPrefs ? 'capture' : 'settings')
   const [staples, setStaples] = useState<PantryStaple[]>(loadStaples)
 
@@ -80,7 +88,7 @@ export default function App() {
         <BottomNav
           page={page}
           onNavigate={navigate}
-          hasList={!!shoppingList}
+          hasList={hasRecipes}
           stapleCount={staples.length}
         />
       )}
@@ -89,7 +97,7 @@ export default function App() {
           <CapturePage
             prefs={prefs}
             onListReady={(list) => {
-              setShoppingList((prev) => (prev ? mergeShoppingLists(prev, list) : list))
+              addRecipe(list)
               navigate('list')
             }}
             onGoToSettings={() => navigate('settings')}
@@ -97,13 +105,17 @@ export default function App() {
         )}
         {page === 'list' && (
           <ShoppingListPage
-            list={shoppingList}
+            collection={collection}
             staples={staples}
+            cartCount={cartCount}
             onAddToPantry={(label) => {
               if (addStaple(label)) showToast('Added to pantry', 'success')
             }}
             onNewRecipe={() => navigate('capture')}
-            onListChange={setShoppingList}
+            onUpdateRecipe={updateRecipe}
+            onUpdateCart={updateCartItems}
+            onAddRecipeToCart={addRecipeToCart}
+            onRemoveRecipeFromCart={removeRecipeFromCart}
           />
         )}
         {page === 'pantry' && (
