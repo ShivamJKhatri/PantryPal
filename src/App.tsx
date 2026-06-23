@@ -9,6 +9,12 @@ import { useUserPrefs } from './hooks/useUserPrefs.ts'
 import { useRecipeCollection } from './hooks/useRecipeCollection.ts'
 import { showToast } from './hooks/useToast.ts'
 import type { PantryStaple } from './types/models.ts'
+import {
+  useAppHistory,
+  pushAppState,
+  type ListView,
+  type Page,
+} from './lib/app-history.ts'
 
 const PANTRY_STORAGE_KEY = 'pantrypal_staples'
 
@@ -21,7 +27,7 @@ function loadStaples(): PantryStaple[] {
   }
 }
 
-export type Page = 'capture' | 'list' | 'pantry' | 'settings'
+export type { Page } from './lib/app-history.ts'
 
 export default function App() {
   const { prefs, setPrefs, hasPrefs } = useUserPrefs()
@@ -36,7 +42,10 @@ export default function App() {
     cartCount,
   } = useRecipeCollection()
   const [page, setPage] = useState<Page>(hasPrefs ? 'capture' : 'settings')
+  const [listView, setListView] = useState<ListView>({ kind: 'recipes' })
   const [staples, setStaples] = useState<PantryStaple[]>(loadStaples)
+
+  useAppHistory(page, listView, setPage, setListView)
 
   useEffect(() => {
     try {
@@ -46,14 +55,31 @@ export default function App() {
     }
   }, [staples])
 
-  function navigate(next: Page) {
-    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      ;(document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(() =>
-        setPage(next),
-      )
-    } else {
+  function navigate(next: Page, opts?: { listView?: ListView }) {
+    const nextListView = opts?.listView ?? (next === 'list' ? listView : undefined)
+    if (opts?.listView) setListView(opts.listView)
+    if (next !== 'list') setListView({ kind: 'recipes' })
+
+    const apply = () => {
       setPage(next)
+      pushAppState(next, next === 'list' ? nextListView : undefined)
     }
+
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      ;(document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(apply)
+    } else {
+      apply()
+    }
+  }
+
+  function navigateList(view: ListView) {
+    setListView(view)
+    if (page !== 'list') setPage('list')
+    pushAppState('list', view)
+  }
+
+  function goBack() {
+    history.back()
   }
 
   function addStaple(label: string): boolean {
@@ -87,7 +113,10 @@ export default function App() {
       {!isOnboarding && (
         <BottomNav
           page={page}
-          onNavigate={navigate}
+          onNavigate={(next) => {
+            if (next === 'list') navigate('list', { listView: { kind: 'recipes' } })
+            else navigate(next)
+          }}
           hasList={hasRecipes}
           stapleCount={staples.length}
         />
@@ -98,7 +127,7 @@ export default function App() {
             prefs={prefs}
             onListReady={(list) => {
               addRecipe(list)
-              navigate('list')
+              navigate('list', { listView: { kind: 'recipes' } })
             }}
             onGoToSettings={() => navigate('settings')}
           />
@@ -108,6 +137,9 @@ export default function App() {
             collection={collection}
             staples={staples}
             cartCount={cartCount}
+            view={listView}
+            onViewChange={navigateList}
+            onBack={goBack}
             onAddToPantry={(label) => {
               if (addStaple(label)) showToast('Added to pantry', 'success')
             }}

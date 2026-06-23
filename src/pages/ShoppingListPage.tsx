@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
+import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem, SuggestionItem } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
 import { matchIngredientLine } from '../services/api.ts'
 import { showToast } from '../hooks/useToast.ts'
@@ -22,8 +22,7 @@ import {
   IconChevronLeft,
 } from '../components/icons.tsx'
 import { useFlip } from '../hooks/useFlip.ts'
-
-type View = { kind: 'recipes' } | { kind: 'detail'; recipeId: string } | { kind: 'cart' }
+import type { ListView } from '../lib/app-history.ts'
 
 function storeDisplayName(storeId: string): string {
   return STORE_OPTIONS.find((s) => s.id === storeId)?.name ?? storeId
@@ -39,6 +38,9 @@ interface Props {
   onAddRecipeToCart: (recipeId: string) => void
   onRemoveRecipeFromCart: (recipeId: string) => void
   cartCount: number
+  view: ListView
+  onViewChange: (view: ListView) => void
+  onBack: () => void
 }
 
 function stapleLabels(staples: PantryStaple[]): Set<string> {
@@ -107,7 +109,14 @@ function ItemRow({
         <IconCheck size={14} />
       </button>
       <div className="item-info">
-        <span className="item-name">{name}</span>
+        <div className="item-name-row">
+          <span className="item-name">{name}</span>
+          {item.confidence !== undefined && item.confidence < 0.75 && (
+            <span className="item-confidence-warn" title={`Low extraction confidence (${Math.round(item.confidence * 100)}%) — double-check this ingredient`}>
+              ⚠
+            </span>
+          )}
+        </div>
         {detail && <span className="item-detail">{detail}</span>}
         {item.aisle && <span className="item-aisle">{item.aisle}</span>}
       </div>
@@ -186,6 +195,26 @@ function ItemList({
     )
   }
 
+  function acceptSuggestion(itemId: string, suggestion: SuggestionItem) {
+    updateItems((prev) =>
+      prev.map((item) => {
+        if (item.id !== itemId) return item
+        return {
+          ...item,
+          productId: suggestion.productId,
+          productName: suggestion.productName,
+          ingredientName: suggestion.productName,
+          aisle: suggestion.aisle,
+          price: suggestion.price,
+          quantityToBuy: 1,
+          lineTotal: suggestion.price,
+          notFound: false,
+          suggestions: undefined,
+        }
+      }),
+    )
+  }
+
   function changeQty(id: string, delta: number) {
     updateItems((prev) =>
       prev.map((item) => {
@@ -236,9 +265,25 @@ function ItemList({
           <summary>Not found in catalog ({notFound.length})</summary>
           <ul className="item-list muted">
             {notFound.map((item) => (
-              <li key={item.id} className="item-row">
-                <span className="item-name">{item.rawText}</span>
-                <span className="item-price">—</span>
+              <li key={item.id} className="item-row item-row--not-found">
+                <div className="item-info">
+                  <span className="item-name">{item.rawText}</span>
+                  {item.suggestions && item.suggestions.length > 0 && (
+                    <div className="item-suggestions">
+                      <span className="item-suggestions__label">Try instead:</span>
+                      {item.suggestions.map((s) => (
+                        <button
+                          key={s.productId}
+                          type="button"
+                          className="suggestion-chip press"
+                          onClick={() => acceptSuggestion(item.id, s)}
+                        >
+                          {s.productName} · ${s.price.toFixed(2)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -353,8 +398,10 @@ export default function ShoppingListPage({
   onAddRecipeToCart,
   onRemoveRecipeFromCart,
   cartCount,
+  view,
+  onViewChange,
+  onBack,
 }: Props) {
-  const [view, setView] = useState<View>({ kind: 'recipes' })
   const [manual, setManual] = useState('')
   const [adding, setAdding] = useState(false)
 
@@ -382,7 +429,7 @@ export default function ShoppingListPage({
       <button
         type="button"
         className="cart-header-btn press"
-        onClick={() => setView({ kind: 'cart' })}
+        onClick={() => onViewChange({ kind: 'cart' })}
         aria-label={cartCount > 0 ? `Open cart, ${cartCount} items` : 'Open cart'}
       >
         <IconCart size={22} />
@@ -432,7 +479,7 @@ export default function ShoppingListPage({
       <PageShell
         title="Cart"
         trailing={
-          <button type="button" className="back-btn press" onClick={() => setView({ kind: 'recipes' })}>
+          <button type="button" className="back-btn press" onClick={onBack}>
             <IconChevronLeft size={20} />
             Recipes
           </button>
@@ -443,7 +490,7 @@ export default function ShoppingListPage({
             icon={<IconCart size={28} />}
             title="Your cart is empty"
             description="Add recipes from your list using the button on each card."
-            action={{ label: 'View recipes', onClick: () => setView({ kind: 'recipes' }) }}
+            action={{ label: 'View recipes', onClick: () => onViewChange({ kind: 'recipes' }) }}
           />
         ) : (
           <>
@@ -483,7 +530,7 @@ export default function ShoppingListPage({
         trailing={
           <div className="header-actions">
             <CartButton />
-            <button type="button" className="back-btn press" onClick={() => setView({ kind: 'recipes' })}>
+            <button type="button" className="back-btn press" onClick={onBack}>
               <IconChevronLeft size={20} />
               Back
             </button>
@@ -559,7 +606,7 @@ export default function ShoppingListPage({
             staples={staples}
             inCart={cartRecipeIds.includes(recipe.id)}
             index={index}
-            onOpen={() => setView({ kind: 'detail', recipeId: recipe.id })}
+            onOpen={() => onViewChange({ kind: 'detail', recipeId: recipe.id })}
             onAddToCart={() => {
               onAddRecipeToCart(recipe.id)
               showToast(`"${recipe.recipeTitle}" added to cart`, 'success')

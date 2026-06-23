@@ -6,6 +6,13 @@ export type PantryStaple = {
   label: string
 }
 
+export type SuggestionItem = {
+  productId: string
+  productName: string
+  price: number
+  aisle?: string
+}
+
 /** One item on a recipe-generated shopping list (flat, display-ready) */
 export type RecipeShoppingListItem = {
   id: string
@@ -21,6 +28,8 @@ export type RecipeShoppingListItem = {
   excluded: boolean
   hasLeftovers: boolean
   notFound: boolean
+  confidence?: number
+  suggestions?: SuggestionItem[]
 }
 
 /** Full recipe shopping list returned by the API */
