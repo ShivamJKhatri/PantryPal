@@ -32,6 +32,7 @@ interface Props {
   collection: RecipeCollection
   staples: PantryStaple[]
   onAddToPantry: (label: string) => void
+  onRemoveFromPantry: (stapleId: string) => void
   onNewRecipe: () => void
   onUpdateRecipe: (recipeId: string, items: RecipeShoppingListItem[]) => void
   onUpdateCart: (items: RecipeShoppingListItem[]) => void
@@ -90,6 +91,7 @@ function ItemRow({
   onToggleExclude: (id: string) => void
   onChangeQty: (id: string, delta: number) => void
   onAddToPantry: (label: string) => void
+  shoppingMode?: boolean
 }) {
   const { name, detail } = getItemDisplay(item)
 
@@ -102,9 +104,12 @@ function ItemRow({
     >
       <button
         type="button"
-        className="exclude-btn press"
-        title="Remove from list"
-        onClick={() => onToggleExclude(item.id)}
+        className={`exclude-btn press${shoppingMode ? ' shopping-mode' : ''}`}
+        title={shoppingMode ? 'Mark as bought & save to pantry' : 'Remove from list'}
+        onClick={() => {
+          if (shoppingMode) onAddToPantry(item.ingredientName)
+          onToggleExclude(item.id)
+        }}
       >
         <IconCheck size={14} />
       </button>
@@ -156,11 +161,15 @@ function ItemList({
   staples,
   onItemsChange,
   onAddToPantry,
+  shoppingMode = false,
+  onRemoveFromPantry,
 }: {
   items: RecipeShoppingListItem[]
   staples: PantryStaple[]
   onItemsChange: (items: RecipeShoppingListItem[]) => void
   onAddToPantry: (label: string) => void
+  shoppingMode?: boolean
+  onRemoveFromPantry?: (stapleId: string) => void
 }) {
   const [localItems, setLocalItems] = useState(() => applyPantryExclusions(items, staples))
   const itemIds = useMemo(() => localItems.map((i) => i.id), [localItems])
@@ -247,6 +256,7 @@ function ItemList({
               onToggleExclude={toggleExclude}
               onChangeQty={changeQty}
               onAddToPantry={onAddToPantry}
+              shoppingMode={shoppingMode}
             />
           ))}
         </ul>
@@ -294,30 +304,49 @@ function ItemList({
         <details className="section-details" open={active.length === 0}>
           <summary>Excluded / in pantry ({excluded.length})</summary>
           <ul className="item-list muted stagger">
-            {excluded.map((item, index) => (
-              <li
-                key={item.id}
-                ref={flipRef(item.id)}
-                className="item-row"
-                style={{ '--i': index } as React.CSSProperties}
-              >
-                <button
-                  type="button"
-                  className="exclude-btn excluded press"
-                  title="Add back to list"
-                  onClick={() => toggleExclude(item.id)}
+            {excluded.map((item, index) => {
+              const matchingStaple = staples.find((s) => {
+                const fields = [item.ingredientName, item.rawText, item.productName].map((f) => f.toLowerCase())
+                return fields.some((f) => f.includes(s.label.toLowerCase()))
+              })
+              return (
+                <li
+                  key={item.id}
+                  ref={flipRef(item.id)}
+                  className="item-row"
+                  style={{ '--i': index } as React.CSSProperties}
                 >
-                  ○
-                </button>
-                <div className="item-info">
-                  <span className="item-name">{getItemDisplay(item).name}</span>
-                  {stapleSet.has(item.ingredientName.toLowerCase()) && (
-                    <span className="item-pantry-tag">In pantry</span>
-                  )}
-                </div>
-                <span className="item-price">—</span>
-              </li>
-            ))}
+                  <button
+                    type="button"
+                    className="exclude-btn excluded press"
+                    title="Add back to list"
+                    onClick={() => toggleExclude(item.id)}
+                  >
+                    ○
+                  </button>
+                  <div className="item-info">
+                    <span className="item-name">{getItemDisplay(item).name}</span>
+                    {matchingStaple ? (
+                      <div className="item-pantry-tag-row">
+                        <span className="item-pantry-tag">In pantry</span>
+                        <button
+                          type="button"
+                          className="remove-pantry-btn press"
+                          title="Remove from pantry — ran out?"
+                          onClick={() => {
+                            onRemoveFromPantry?.(matchingStaple.id)
+                            toggleExclude(item.id)
+                          }}
+                        >
+                          Ran out
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                  <span className="item-price">—</span>
+                </li>
+              )
+            })}
           </ul>
         </details>
       )}
@@ -392,6 +421,7 @@ export default function ShoppingListPage({
   collection,
   staples,
   onAddToPantry,
+  onRemoveFromPantry,
   onNewRecipe,
   onUpdateRecipe,
   onUpdateCart,
@@ -404,6 +434,7 @@ export default function ShoppingListPage({
 }: Props) {
   const [manual, setManual] = useState('')
   const [adding, setAdding] = useState(false)
+  const [shoppingMode, setShoppingMode] = useState(false)
 
   const { recipes, cartItems, cartRecipeIds } = collection
 
@@ -479,10 +510,19 @@ export default function ShoppingListPage({
       <PageShell
         title="Cart"
         trailing={
-          <button type="button" className="back-btn press" onClick={onBack}>
-            <IconChevronLeft size={20} />
-            Recipes
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <button
+              type="button"
+              className={`shopping-toggle-btn press${shoppingMode ? ' active' : ''}`}
+              onClick={() => setShoppingMode((m) => !m)}
+            >
+              {shoppingMode ? 'Done' : 'Start Shopping'}
+            </button>
+            <button type="button" className="back-btn press" onClick={onBack}>
+              <IconChevronLeft size={20} />
+              Recipes
+            </button>
+          </div>
         }
       >
         {cartItems.length === 0 ? (
@@ -513,6 +553,8 @@ export default function ShoppingListPage({
               staples={staples}
               onItemsChange={onUpdateCart}
               onAddToPantry={onAddToPantry}
+              shoppingMode={shoppingMode}
+              onRemoveFromPantry={onRemoveFromPantry}
             />
           </>
         )}

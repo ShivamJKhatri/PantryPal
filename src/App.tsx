@@ -143,6 +143,7 @@ export default function App() {
             onAddToPantry={(label) => {
               if (addStaple(label)) showToast('Added to pantry', 'success')
             }}
+            onRemoveFromPantry={removeStaple}
             onNewRecipe={() => navigate('capture')}
             onUpdateRecipe={updateRecipe}
             onUpdateCart={updateCartItems}

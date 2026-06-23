@@ -566,6 +566,15 @@ h1 {
 }
 .suggestion-chip:hover { background: var(--accent-ring); border-color: var(--accent); }
 
+.item-pantry-tag-row { display: flex; align-items: center; gap: var(--s-1); }
+.remove-pantry-btn { font-size: 10px; color: var(--text-subtle); background: none; border: 1px solid var(--border); border-radius: var(--r-pill); padding: 1px 7px; cursor: pointer; transition: color var(--dur-fast), border-color var(--dur-fast); }
+.remove-pantry-btn:hover { color: var(--danger, #ef4444); border-color: var(--danger, #ef4444); }
+
+.shopping-toggle-btn { font-size: var(--fs-xs); font-weight: 600; padding: 5px 13px; border-radius: var(--r-pill); border: 1px solid var(--accent); background: transparent; color: var(--accent); cursor: pointer; white-space: nowrap; transition: background var(--dur-fast), color var(--dur-fast); }
+.shopping-toggle-btn.active { background: var(--accent); color: #fff; }
+.exclude-btn.shopping-mode { background: var(--surface-2); border-color: var(--border); color: var(--text-subtle); }
+.exclude-btn.shopping-mode:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
 .item-actions {
   grid-area: actions;
   display: flex;
