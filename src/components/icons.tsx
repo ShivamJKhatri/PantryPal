@@ -63,3 +63,9 @@ export const IconJar = (p: IconProps) => (
 export const IconReceipt = (p: IconProps) => (
   <Icon {...p}><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1z" /><path d="M8 10h8M8 14h8" /></Icon>
 )
+export const IconCart = (p: IconProps) => (
+  <Icon {...p}><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></Icon>
+)
+export const IconChevronLeft = (p: IconProps) => (
+  <Icon {...p}><path d="m15 18-6-6 6-6" /></Icon>
+)

@@ -1,27 +1,44 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { PantryStaple, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
+import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
 import { matchIngredientLine } from '../services/api.ts'
 import { showToast } from '../hooks/useToast.ts'
+import { getItemDisplay } from '../lib/display-item.ts'
+import { calcTotal } from '../lib/merge-items.ts'
 import PageShell from '../components/PageShell.tsx'
 import Card from '../components/Card.tsx'
 import EmptyState from '../components/EmptyState.tsx'
 import IconButton from '../components/IconButton.tsx'
 import Button from '../components/Button.tsx'
 import CountUp from '../components/CountUp.tsx'
-import { IconCheck, IconMinus, IconPlus, IconExternal, IconJar, IconReceipt } from '../components/icons.tsx'
+import {
+  IconCheck,
+  IconMinus,
+  IconPlus,
+  IconExternal,
+  IconJar,
+  IconReceipt,
+  IconCart,
+  IconChevronLeft,
+} from '../components/icons.tsx'
 import { useFlip } from '../hooks/useFlip.ts'
+
+type View = { kind: 'recipes' } | { kind: 'detail'; recipeId: string } | { kind: 'cart' }
 
 function storeDisplayName(storeId: string): string {
   return STORE_OPTIONS.find((s) => s.id === storeId)?.name ?? storeId
 }
 
 interface Props {
-  list: RecipeShoppingList | null
+  collection: RecipeCollection
   staples: PantryStaple[]
   onAddToPantry: (label: string) => void
   onNewRecipe: () => void
-  onListChange?: (list: RecipeShoppingList) => void
+  onUpdateRecipe: (recipeId: string, items: RecipeShoppingListItem[]) => void
+  onUpdateCart: (items: RecipeShoppingListItem[]) => void
+  onAddRecipeToCart: (recipeId: string) => void
+  onRemoveRecipeFromCart: (recipeId: string) => void
+  cartCount: number
 }
 
 function stapleLabels(staples: PantryStaple[]): Set<string> {
@@ -48,55 +65,108 @@ function applyPantryExclusions(
   )
 }
 
-function calcTotal(items: RecipeShoppingListItem[]): number {
-  return Math.round(items.reduce((sum, item) => sum + item.lineTotal, 0) * 100) / 100
+function activeCount(items: RecipeShoppingListItem[]): number {
+  return items.filter((i) => !i.excluded && !i.notFound).length
 }
 
-export default function ShoppingListPage({ list, staples, onAddToPantry, onNewRecipe, onListChange }: Props) {
-  const [items, setItems] = useState<RecipeShoppingListItem[]>([])
-  const [manual, setManual] = useState('')
-  const [adding, setAdding] = useState(false)
+function ItemRow({
+  item,
+  index,
+  flipRef,
+  onToggleExclude,
+  onChangeQty,
+  onAddToPantry,
+}: {
+  item: RecipeShoppingListItem
+  index: number
+  flipRef: (id: string) => (el: HTMLLIElement | null) => void
+  onToggleExclude: (id: string) => void
+  onChangeQty: (id: string, delta: number) => void
+  onAddToPantry: (label: string) => void
+}) {
+  const { name, detail } = getItemDisplay(item)
 
-  useEffect(() => {
-    if (!list) {
-      setItems([])
-      return
-    }
-    setItems(applyPantryExclusions(list.items, staples))
-  }, [list?.id])
+  return (
+    <li
+      key={item.id}
+      ref={flipRef(item.id)}
+      className="item-row"
+      style={{ '--i': index } as React.CSSProperties}
+    >
+      <button
+        type="button"
+        className="exclude-btn press"
+        title="Remove from list"
+        onClick={() => onToggleExclude(item.id)}
+      >
+        <IconCheck size={14} />
+      </button>
+      <div className="item-info">
+        <span className="item-name">{name}</span>
+        {detail && <span className="item-detail">{detail}</span>}
+        {item.aisle && <span className="item-aisle">{item.aisle}</span>}
+      </div>
+      <div className="item-actions">
+        <div className="item-qty">
+          <IconButton
+            label="Decrease quantity"
+            onClick={() => onChangeQty(item.id, -1)}
+            disabled={item.quantityToBuy <= 1}
+          >
+            <IconMinus size={16} />
+          </IconButton>
+          <span>{item.quantityToBuy}</span>
+          <IconButton label="Increase quantity" onClick={() => onChangeQty(item.id, 1)}>
+            <IconPlus size={16} />
+          </IconButton>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="item-price">${item.lineTotal.toFixed(2)}</span>
+          <IconButton
+            label="Save to pantry"
+            onClick={() => {
+              onAddToPantry(item.ingredientName)
+              onToggleExclude(item.id)
+            }}
+          >
+            <IconJar size={16} />
+          </IconButton>
+        </div>
+      </div>
+    </li>
+  )
+}
 
-  useEffect(() => {
-    if (!list) return
-    setItems((prev) => applyPantryExclusions(prev.length ? prev : list.items, staples))
-  }, [staples])
-
-  useEffect(() => {
-    if (!list || !onListChange) return
-    onListChange({
-      ...list,
-      items,
-      estimatedTotal: calcTotal(items),
-    })
-  }, [items])
-
-  const itemIds = useMemo(() => items.map((i) => i.id), [items])
+function ItemList({
+  items,
+  staples,
+  onItemsChange,
+  onAddToPantry,
+}: {
+  items: RecipeShoppingListItem[]
+  staples: PantryStaple[]
+  onItemsChange: (items: RecipeShoppingListItem[]) => void
+  onAddToPantry: (label: string) => void
+}) {
+  const [localItems, setLocalItems] = useState(items)
+  const itemIds = useMemo(() => localItems.map((i) => i.id), [localItems])
   const flipRef = useFlip(itemIds)
+  const stapleSet = stapleLabels(staples)
 
-  if (!list) {
-    return (
-      <PageShell>
-        <EmptyState
-          icon={<IconReceipt size={28} />}
-          title="No shopping list yet"
-          description="Paste a recipe URL or upload a screenshot to get started."
-          action={{ label: 'Add a recipe', onClick: onNewRecipe }}
-        />
-      </PageShell>
-    )
+  useEffect(() => {
+    setLocalItems(applyPantryExclusions(items, staples))
+  }, [items, staples])
+
+  function updateItems(updater: (prev: RecipeShoppingListItem[]) => RecipeShoppingListItem[]) {
+    setLocalItems((prev) => {
+      const next = updater(prev)
+      onItemsChange(next)
+      return next
+    })
   }
 
   function toggleExclude(id: string) {
-    setItems((prev) =>
+    updateItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item
         const excluded = !item.excluded
@@ -112,7 +182,7 @@ export default function ShoppingListPage({ list, staples, onAddToPantry, onNewRe
   }
 
   function changeQty(id: string, delta: number) {
-    setItems((prev) =>
+    updateItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item
         const qty = Math.max(0, item.quantityToBuy + delta)
@@ -126,114 +196,24 @@ export default function ShoppingListPage({ list, staples, onAddToPantry, onNewRe
     )
   }
 
-  async function addManualItem(e: React.FormEvent) {
-    e.preventDefault()
-    const text = manual.trim()
-    if (!text || adding) return
-    setAdding(true)
-    try {
-      const item = await matchIngredientLine(text)
-      const [withPantry] = applyPantryExclusions([item], staples)
-      setItems((prev) => [...prev, withPantry])
-      setManual('')
-      showToast(
-        withPantry.notFound ? 'Added without a store match' : `Added ${withPantry.ingredientName}`,
-        withPantry.notFound ? 'default' : 'success',
-      )
-    } catch {
-      showToast('Could not add item', 'error')
-    } finally {
-      setAdding(false)
-    }
-  }
-
-  const active = items.filter((i) => !i.excluded && !i.notFound)
-  const excluded = items.filter((i) => i.excluded)
-  const notFound = items.filter((i) => i.notFound && !i.excluded)
-  const total = calcTotal(items)
-  const stapleSet = stapleLabels(staples)
+  const active = localItems.filter((i) => !i.excluded && !i.notFound)
+  const excluded = localItems.filter((i) => i.excluded)
+  const notFound = localItems.filter((i) => i.notFound && !i.excluded)
 
   return (
-    <PageShell title={list.recipeTitle}>
-      <div className="list-meta">
-        <span>{storeDisplayName(list.storeId)} · {list.zipCode}</span>
-        <span className="list-meta__sep" aria-hidden>·</span>
-        <span>{active.length} items</span>
-        {list.sourceUrl && (
-          <>
-            <span className="list-meta__sep" aria-hidden>·</span>
-            <a className="source-link" href={list.sourceUrl} target="_blank" rel="noreferrer">
-              View recipe <IconExternal size={14} />
-            </a>
-          </>
-        )}
-      </div>
-
-      <Card padding="sm" className="manual-add">
-        <form className="add-form" onSubmit={(e) => void addManualItem(e)}>
-          <input
-            type="text"
-            placeholder="Add an item manually…"
-            value={manual}
-            onChange={(e) => setManual(e.target.value)}
-            disabled={adding}
-          />
-          <Button type="submit" size="md" disabled={!manual.trim()} loading={adding}>
-            Add
-          </Button>
-        </form>
-      </Card>
-
+    <>
       {active.length > 0 && (
         <ul className="item-list stagger">
           {active.map((item, index) => (
-            <li
+            <ItemRow
               key={item.id}
-              ref={flipRef(item.id)}
-              className="item-row"
-              style={{ '--i': index } as React.CSSProperties}
-            >
-              <button
-                type="button"
-                className="exclude-btn press"
-                title="Remove from list"
-                onClick={() => toggleExclude(item.id)}
-              >
-                <IconCheck size={14} />
-              </button>
-              <div className="item-info">
-                <span className="item-name">{item.ingredientName}</span>
-                <span className="item-detail">{item.rawText}</span>
-                {item.aisle && <span className="item-aisle">{item.aisle}</span>}
-              </div>
-              <div className="item-actions">
-                <div className="item-qty">
-                  <IconButton
-                    label="Decrease quantity"
-                    onClick={() => changeQty(item.id, -1)}
-                    disabled={item.quantityToBuy <= 1}
-                  >
-                    <IconMinus size={16} />
-                  </IconButton>
-                  <span>{item.quantityToBuy}</span>
-                  <IconButton label="Increase quantity" onClick={() => changeQty(item.id, 1)}>
-                    <IconPlus size={16} />
-                  </IconButton>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className="item-price">${item.lineTotal.toFixed(2)}</span>
-                  <IconButton
-                    label="Save to pantry"
-                    onClick={() => {
-                      onAddToPantry(item.ingredientName)
-                      toggleExclude(item.id)
-                    }}
-                  >
-                    <IconJar size={16} />
-                  </IconButton>
-                </div>
-              </div>
-            </li>
+              item={item}
+              index={index}
+              flipRef={flipRef}
+              onToggleExclude={toggleExclude}
+              onChangeQty={changeQty}
+              onAddToPantry={onAddToPantry}
+            />
           ))}
         </ul>
       )}
@@ -280,7 +260,7 @@ export default function ShoppingListPage({ list, staples, onAddToPantry, onNewRe
                   ○
                 </button>
                 <div className="item-info">
-                  <span className="item-name">{item.ingredientName}</span>
+                  <span className="item-name">{getItemDisplay(item).name}</span>
                   {stapleSet.has(item.ingredientName.toLowerCase()) && (
                     <span className="item-pantry-tag">In pantry</span>
                   )}
@@ -295,11 +275,298 @@ export default function ShoppingListPage({ list, staples, onAddToPantry, onNewRe
       <div className="list-total-bar">
         <div>
           <div className="list-total-bar__meta">{active.length} items · estimated</div>
-          <div className="list-total-bar__amount">$<CountUp value={total} /></div>
+          <div className="list-total-bar__amount">$<CountUp value={calcTotal(localItems)} /></div>
           <div className="list-total-bar__disclaimer">Prices are estimates</div>
         </div>
-        <Button variant="secondary" size="sm" onClick={onNewRecipe}>
-          + Another recipe
+      </div>
+    </>
+  )
+}
+
+function RecipeCard({
+  recipe,
+  inCart,
+  index,
+  onOpen,
+  onAddToCart,
+  onRemoveFromCart,
+}: {
+  recipe: RecipeShoppingList
+  inCart: boolean
+  index: number
+  onOpen: () => void
+  onAddToCart: () => void
+  onRemoveFromCart: () => void
+}) {
+  const count = activeCount(recipe.items)
+  const total = calcTotal(recipe.items)
+
+  return (
+    <Card padding="none" className="recipe-card">
+      <button type="button" className="recipe-card__main press" onClick={onOpen} style={{ '--i': index } as React.CSSProperties}>
+        <div className="recipe-card__header">
+          <h2 className="recipe-card__title">{recipe.recipeTitle}</h2>
+          {recipe.sourceUrl && (
+            <a
+              className="recipe-card__link"
+              href={recipe.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <IconExternal size={14} />
+            </a>
+          )}
+        </div>
+        <p className="recipe-card__meta">
+          {count} items · ${total.toFixed(2)} est. · {storeDisplayName(recipe.storeId)}
+        </p>
+      </button>
+      <div className="recipe-card__footer">
+        {inCart ? (
+          <Button variant="secondary" size="sm" fullWidth onClick={onRemoveFromCart}>
+            Remove from cart
+          </Button>
+        ) : (
+          <Button size="sm" fullWidth onClick={onAddToCart}>
+            Add all to cart
+          </Button>
+        )}
+      </div>
+    </Card>
+  )
+}
+
+export default function ShoppingListPage({
+  collection,
+  staples,
+  onAddToPantry,
+  onNewRecipe,
+  onUpdateRecipe,
+  onUpdateCart,
+  onAddRecipeToCart,
+  onRemoveRecipeFromCart,
+  cartCount,
+}: Props) {
+  const [view, setView] = useState<View>({ kind: 'recipes' })
+  const [manual, setManual] = useState('')
+  const [adding, setAdding] = useState(false)
+
+  const { recipes, cartItems, cartRecipeIds } = collection
+
+  const selectedRecipe = view.kind === 'detail'
+    ? recipes.find((r) => r.id === view.recipeId)
+    : null
+
+  if (recipes.length === 0) {
+    return (
+      <PageShell>
+        <EmptyState
+          icon={<IconReceipt size={28} />}
+          title="No recipes yet"
+          description="Paste a recipe URL or upload a screenshot to get started."
+          action={{ label: 'Add a recipe', onClick: onNewRecipe }}
+        />
+      </PageShell>
+    )
+  }
+
+  function CartButton() {
+    return (
+      <button
+        type="button"
+        className="cart-header-btn press"
+        onClick={() => setView({ kind: 'cart' })}
+        aria-label={cartCount > 0 ? `Open cart, ${cartCount} items` : 'Open cart'}
+      >
+        <IconCart size={22} />
+        {cartCount > 0 && <span className="cart-header-btn__badge">{cartCount}</span>}
+      </button>
+    )
+  }
+
+  async function addManualToCart(e: React.FormEvent) {
+    e.preventDefault()
+    const text = manual.trim()
+    if (!text || adding) return
+    setAdding(true)
+    try {
+      const item = await matchIngredientLine(text)
+      const [withPantry] = applyPantryExclusions([item], staples)
+      onUpdateCart(mergeManualItem(cartItems, withPantry))
+      setManual('')
+      showToast(
+        withPantry.notFound ? 'Added without a store match' : `Added ${withPantry.ingredientName}`,
+        withPantry.notFound ? 'default' : 'success',
+      )
+    } catch {
+      showToast('Could not add item', 'error')
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  function mergeManualItem(
+    existing: RecipeShoppingListItem[],
+    item: RecipeShoppingListItem,
+  ): RecipeShoppingListItem[] {
+    if (!item.productId || item.notFound) return [...existing, item]
+    const match = existing.find((i) => i.productId === item.productId)
+    if (!match) return [...existing, item]
+    const qty = match.quantityToBuy + item.quantityToBuy
+    return existing.map((i) =>
+      i.id === match.id
+        ? { ...i, quantityToBuy: qty, lineTotal: Math.round(qty * i.price * 100) / 100 }
+        : i,
+    )
+  }
+
+  if (view.kind === 'cart') {
+    return (
+      <PageShell
+        title="Cart"
+        trailing={
+          <button type="button" className="back-btn press" onClick={() => setView({ kind: 'recipes' })}>
+            <IconChevronLeft size={20} />
+            Recipes
+          </button>
+        }
+      >
+        {cartItems.length === 0 ? (
+          <EmptyState
+            icon={<IconCart size={28} />}
+            title="Your cart is empty"
+            description="Add recipes from your list using the button on each card."
+            action={{ label: 'View recipes', onClick: () => setView({ kind: 'recipes' }) }}
+          />
+        ) : (
+          <>
+            <Card padding="sm" className="manual-add">
+              <form className="add-form" onSubmit={(e) => void addManualToCart(e)}>
+                <input
+                  type="text"
+                  placeholder="Add an item manually…"
+                  value={manual}
+                  onChange={(e) => setManual(e.target.value)}
+                  disabled={adding}
+                />
+                <Button type="submit" size="md" disabled={!manual.trim()} loading={adding}>
+                  Add
+                </Button>
+              </form>
+            </Card>
+            <ItemList
+              items={cartItems}
+              staples={staples}
+              onItemsChange={onUpdateCart}
+              onAddToPantry={onAddToPantry}
+            />
+          </>
+        )}
+      </PageShell>
+    )
+  }
+
+  if (view.kind === 'detail' && selectedRecipe) {
+    const inCart = cartRecipeIds.includes(selectedRecipe.id)
+
+    return (
+      <PageShell
+        title={selectedRecipe.recipeTitle}
+        trailing={
+          <div className="header-actions">
+            <CartButton />
+            <button type="button" className="back-btn press" onClick={() => setView({ kind: 'recipes' })}>
+              <IconChevronLeft size={20} />
+              Back
+            </button>
+          </div>
+        }
+      >
+        <div className="list-meta">
+          <span>{storeDisplayName(selectedRecipe.storeId)} · {selectedRecipe.zipCode}</span>
+          <span className="list-meta__sep" aria-hidden>·</span>
+          <span>{activeCount(selectedRecipe.items)} items</span>
+          {selectedRecipe.sourceUrl && (
+            <>
+              <span className="list-meta__sep" aria-hidden>·</span>
+              <a className="source-link" href={selectedRecipe.sourceUrl} target="_blank" rel="noreferrer">
+                View recipe <IconExternal size={14} />
+              </a>
+            </>
+          )}
+        </div>
+
+        <ItemList
+          items={selectedRecipe.items}
+          staples={staples}
+          onItemsChange={(items) => onUpdateRecipe(selectedRecipe.id, items)}
+          onAddToPantry={onAddToPantry}
+        />
+
+        <div className="recipe-detail-actions">
+          {inCart ? (
+            <Button
+              variant="secondary"
+              fullWidth
+              onClick={() => {
+                onRemoveRecipeFromCart(selectedRecipe.id)
+                showToast('Removed from cart', 'default')
+              }}
+            >
+              Remove from cart
+            </Button>
+          ) : (
+            <Button
+              fullWidth
+              onClick={() => {
+                onAddRecipeToCart(selectedRecipe.id)
+                showToast('Added to cart', 'success')
+              }}
+            >
+              Add all to cart
+            </Button>
+          )}
+          <Button variant="secondary" size="sm" onClick={onNewRecipe}>
+            + Another recipe
+          </Button>
+        </div>
+      </PageShell>
+    )
+  }
+
+  return (
+    <PageShell
+      title="My Recipes"
+      trailing={<CartButton />}
+    >
+      <p className="subtitle" style={{ marginTop: '-12px', marginBottom: '16px' }}>
+        {recipes.length} recipe{recipes.length !== 1 ? 's' : ''} saved
+      </p>
+
+      <div className="recipe-card-grid stagger">
+        {recipes.map((recipe, index) => (
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            inCart={cartRecipeIds.includes(recipe.id)}
+            index={index}
+            onOpen={() => setView({ kind: 'detail', recipeId: recipe.id })}
+            onAddToCart={() => {
+              onAddRecipeToCart(recipe.id)
+              showToast(`"${recipe.recipeTitle}" added to cart`, 'success')
+            }}
+            onRemoveFromCart={() => {
+              onRemoveRecipeFromCart(recipe.id)
+              showToast('Removed from cart', 'default')
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="recipe-list-footer">
+        <Button variant="secondary" onClick={onNewRecipe}>
+          + Add another recipe
         </Button>
       </div>
     </PageShell>
