@@ -177,7 +177,7 @@ function ItemList({
   onRemoveFromPantry?: (stapleId: string) => void
 }) {
   const [localItems, setLocalItems] = useState(() => applyPantryExclusions(items, staples))
-  const [boughtIds, setBoughtIds] = useState<Set<string>>(new Set())
+  const [boughtIds, setBoughtIds] = useState<Map<string, string>>(new Map()) // id → ingredientName
   const itemIds = useMemo(() => localItems.map((i) => i.id), [localItems])
   const flipRef = useFlip(itemIds)
 
@@ -186,7 +186,11 @@ function ItemList({
   }, [items, staples])
 
   useEffect(() => {
-    if (!shoppingMode) setBoughtIds(new Set())
+    if (!shoppingMode && boughtIds.size > 0) {
+      boughtIds.forEach((name) => onAddToPantry(name))
+      setBoughtIds(new Map())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shoppingMode])
 
   function updateItems(updater: (prev: RecipeShoppingListItem[]) => RecipeShoppingListItem[]) {
@@ -249,8 +253,7 @@ function ItemList({
   }
 
   function buyItem(id: string, ingredientName: string) {
-    setBoughtIds((prev) => { const next = new Set(prev); next.add(id); return next })
-    onAddToPantry(ingredientName)
+    setBoughtIds((prev) => new Map(prev).set(id, ingredientName))
   }
 
   function ranOut(item: RecipeShoppingListItem, stapleId: string) {
