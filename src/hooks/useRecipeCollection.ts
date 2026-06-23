@@ -1,20 +1,33 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
 import { mergeItems, calcTotal } from '../lib/merge-items.ts'
+import { normalizeItems } from '../lib/normalize-item.ts'
 
 const COLLECTION_KEY = 'pantrypal_recipes'
 const LEGACY_LIST_KEY = 'pantrypal_list'
 
 const EMPTY: RecipeCollection = { recipes: [], cartItems: [], cartRecipeIds: [] }
 
+function normalizeCollection(collection: RecipeCollection): RecipeCollection {
+  return {
+    ...collection,
+    recipes: collection.recipes.map((r) => ({
+      ...r,
+      items: normalizeItems(r.items),
+      estimatedTotal: calcTotal(normalizeItems(r.items)),
+    })),
+    cartItems: normalizeItems(collection.cartItems),
+  }
+}
+
 function loadCollection(): RecipeCollection {
   try {
     const raw = sessionStorage.getItem(COLLECTION_KEY)
-    if (raw) return JSON.parse(raw) as RecipeCollection
+    if (raw) return normalizeCollection(JSON.parse(raw) as RecipeCollection)
     const legacy = sessionStorage.getItem(LEGACY_LIST_KEY)
     if (legacy) {
       const list = JSON.parse(legacy) as RecipeShoppingList
-      return { recipes: [list], cartItems: [], cartRecipeIds: [] }
+      return normalizeCollection({ recipes: [{ ...list, items: normalizeItems(list.items) }], cartItems: [], cartRecipeIds: [] })
     }
   } catch {
     // corrupt storage
@@ -26,7 +39,7 @@ function rebuildCart(recipes: RecipeShoppingList[], cartRecipeIds: string[]): Re
   let items: RecipeShoppingListItem[] = []
   for (const id of cartRecipeIds) {
     const recipe = recipes.find((r) => r.id === id)
-    if (recipe) items = mergeItems(items, recipe.items)
+    if (recipe) items = mergeItems(items, normalizeItems(recipe.items))
   }
   return items
 }
@@ -48,9 +61,18 @@ export function useRecipeCollection() {
   }, [collection])
 
   const addRecipe = useCallback((list: RecipeShoppingList) => {
+    const items = normalizeItems(list.items)
     setCollection((prev) => ({
       ...prev,
-      recipes: [...prev.recipes, { ...list, id: list.id || crypto.randomUUID() }],
+      recipes: [
+        ...prev.recipes,
+        {
+          ...list,
+          id: list.id || crypto.randomUUID(),
+          items,
+          estimatedTotal: calcTotal(items),
+        },
+      ],
     }))
   }, [])
 

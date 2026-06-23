@@ -20,7 +20,7 @@ export function itemFromIngredient(rawText: string): RecipeShoppingListItem {
     }
   }
 
-  const qty = parseLeadingQty(rawText)
+  const qty = match.hasLeftovers ? 1 : parseLeadingQty(rawText)
   return {
     id: crypto.randomUUID(),
     ingredientName: match.name,

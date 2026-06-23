@@ -22,8 +22,7 @@ import {
   IconChevronLeft,
 } from '../components/icons.tsx'
 import { useFlip } from '../hooks/useFlip.ts'
-
-type View = { kind: 'recipes' } | { kind: 'detail'; recipeId: string } | { kind: 'cart' }
+import type { ListView } from '../lib/app-history.ts'
 
 function storeDisplayName(storeId: string): string {
   return STORE_OPTIONS.find((s) => s.id === storeId)?.name ?? storeId
@@ -39,6 +38,9 @@ interface Props {
   onAddRecipeToCart: (recipeId: string) => void
   onRemoveRecipeFromCart: (recipeId: string) => void
   cartCount: number
+  view: ListView
+  onViewChange: (view: ListView) => void
+  onBack: () => void
 }
 
 function stapleLabels(staples: PantryStaple[]): Set<string> {
@@ -353,8 +355,10 @@ export default function ShoppingListPage({
   onAddRecipeToCart,
   onRemoveRecipeFromCart,
   cartCount,
+  view,
+  onViewChange,
+  onBack,
 }: Props) {
-  const [view, setView] = useState<View>({ kind: 'recipes' })
   const [manual, setManual] = useState('')
   const [adding, setAdding] = useState(false)
 
@@ -382,7 +386,7 @@ export default function ShoppingListPage({
       <button
         type="button"
         className="cart-header-btn press"
-        onClick={() => setView({ kind: 'cart' })}
+        onClick={() => onViewChange({ kind: 'cart' })}
         aria-label={cartCount > 0 ? `Open cart, ${cartCount} items` : 'Open cart'}
       >
         <IconCart size={22} />
@@ -432,7 +436,7 @@ export default function ShoppingListPage({
       <PageShell
         title="Cart"
         trailing={
-          <button type="button" className="back-btn press" onClick={() => setView({ kind: 'recipes' })}>
+          <button type="button" className="back-btn press" onClick={onBack}>
             <IconChevronLeft size={20} />
             Recipes
           </button>
@@ -443,7 +447,7 @@ export default function ShoppingListPage({
             icon={<IconCart size={28} />}
             title="Your cart is empty"
             description="Add recipes from your list using the button on each card."
-            action={{ label: 'View recipes', onClick: () => setView({ kind: 'recipes' }) }}
+            action={{ label: 'View recipes', onClick: () => onViewChange({ kind: 'recipes' }) }}
           />
         ) : (
           <>
@@ -483,7 +487,7 @@ export default function ShoppingListPage({
         trailing={
           <div className="header-actions">
             <CartButton />
-            <button type="button" className="back-btn press" onClick={() => setView({ kind: 'recipes' })}>
+            <button type="button" className="back-btn press" onClick={onBack}>
               <IconChevronLeft size={20} />
               Back
             </button>
@@ -559,7 +563,7 @@ export default function ShoppingListPage({
             staples={staples}
             inCart={cartRecipeIds.includes(recipe.id)}
             index={index}
-            onOpen={() => setView({ kind: 'detail', recipeId: recipe.id })}
+            onOpen={() => onViewChange({ kind: 'detail', recipeId: recipe.id })}
             onAddToCart={() => {
               onAddRecipeToCart(recipe.id)
               showToast(`"${recipe.recipeTitle}" added to cart`, 'success')
