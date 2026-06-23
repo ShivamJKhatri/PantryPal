@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
 import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
 import { matchIngredientLine } from '../services/api.ts'
@@ -85,11 +85,76 @@ function ItemRow({
   onAddToPantry: (label: string) => void
 }) {
   const { name, detail } = getItemDisplay(item)
+  const rowRef = useRef<HTMLLIElement | null>(null)
+  const infoRef = useRef<HTMLDivElement | null>(null)
+  const actionsRef = useRef<HTMLDivElement | null>(null)
+
+  useLayoutEffect(() => {
+    if (index > 1 || !rowRef.current || !infoRef.current || !actionsRef.current) return
+    const row = rowRef.current
+    const info = infoRef.current
+    const actions = actionsRef.current
+    const rowStyle = getComputedStyle(row)
+    const infoStyle = getComputedStyle(info)
+    const infoRect = info.getBoundingClientRect()
+    const actionsRect = actions.getBoundingClientRect()
+    const rowRect = row.getBoundingClientRect()
+    const cssHasFlexColumn = [...document.styleSheets].some((sheet) => {
+      try {
+        return [...sheet.cssRules].some(
+          (rule) =>
+            rule instanceof CSSStyleRule &&
+            rule.selectorText.includes('.item-info') &&
+            rule.style.flexDirection === 'column',
+        )
+      } catch {
+        return false
+      }
+    })
+    // #region agent log
+    fetch('http://127.0.0.1:7864/ingest/04d8c24f-4c41-4b8c-855e-5197f10e445f', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '3159bb' },
+      body: JSON.stringify({
+        sessionId: '3159bb',
+        runId: 'pre-fix',
+        hypothesisId: 'H1-H5',
+        location: 'ShoppingListPage.tsx:ItemRow',
+        message: 'item row layout snapshot',
+        data: {
+          index,
+          viewportWidth: window.innerWidth,
+          displayData: { name, detail, aisle: item.aisle, rawText: item.rawText },
+          rowDisplay: rowStyle.display,
+          rowGridColumns: rowStyle.gridTemplateColumns,
+          infoFlexDirection: infoStyle.flexDirection,
+          infoGridColumn: infoStyle.gridColumn,
+          infoGridRow: infoStyle.gridRow,
+          actionsGridColumn: getComputedStyle(actions).gridColumn,
+          actionsGridRow: getComputedStyle(actions).gridRow,
+          cssHasItemInfoFlexColumn: cssHasFlexColumn,
+          rects: {
+            row: { w: rowRect.width, h: rowRect.height },
+            info: { left: infoRect.left, w: infoRect.width, h: infoRect.height, relLeft: infoRect.left - rowRect.left },
+            actions: { left: actionsRect.left, w: actionsRect.width, relLeft: actionsRect.left - rowRect.left },
+            gapInfoToActions: actionsRect.left - (infoRect.left + infoRect.width),
+          },
+          aisleColor: item.aisle ? getComputedStyle(info.querySelector('.item-aisle')!).color : null,
+          aisleBg: item.aisle ? getComputedStyle(info.querySelector('.item-aisle')!).backgroundColor : null,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {})
+    // #endregion
+  }, [index, name, detail, item.aisle, item.rawText])
 
   return (
     <li
       key={item.id}
-      ref={flipRef(item.id)}
+      ref={(el) => {
+        rowRef.current = el
+        flipRef(item.id)(el)
+      }}
       className="item-row"
       style={{ '--i': index } as React.CSSProperties}
     >
@@ -101,12 +166,12 @@ function ItemRow({
       >
         <IconCheck size={14} />
       </button>
-      <div className="item-info">
+      <div className="item-info" ref={infoRef}>
         <span className="item-name">{name}</span>
         {detail && <span className="item-detail">{detail}</span>}
         {item.aisle && <span className="item-aisle">{item.aisle}</span>}
       </div>
-      <div className="item-actions">
+      <div className="item-actions" ref={actionsRef}>
         <div className="item-qty">
           <IconButton
             label="Decrease quantity"
