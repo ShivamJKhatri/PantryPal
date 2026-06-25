@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react'
 import type { Page } from '../App.tsx'
 import { IconHome, IconList, IconPantry, IconSettings } from './icons.tsx'
 
@@ -18,6 +19,33 @@ const TABS: { id: Page; label: string; Icon: typeof IconHome }[] = [
 ]
 
 export default function BottomNav({ page, onNavigate, hasList, stapleCount, storeName, zipCode }: NavProps) {
+  const tabsRef = useRef<HTMLDivElement>(null)
+  const indicatorRef = useRef<HTMLDivElement>(null)
+  const firstRender = useRef(true)
+
+  useEffect(() => {
+    const tabs = tabsRef.current
+    const indicator = indicatorRef.current
+    if (!tabs || !indicator) return
+
+    const activeTab = tabs.querySelector<HTMLElement>('[aria-current="page"]')
+    if (!activeTab) return
+
+    const tabsRect = tabs.getBoundingClientRect()
+    const tabRect = activeTab.getBoundingClientRect()
+
+    if (firstRender.current) {
+      // No transition on first paint — jump to position
+      indicator.style.transition = 'none'
+      firstRender.current = false
+    } else {
+      indicator.style.transition = ''
+    }
+
+    indicator.style.width = `${tabRect.width}px`
+    indicator.style.transform = `translateX(${tabRect.left - tabsRect.left - 4}px)`
+  }, [page])
+
   return (
     <nav className="bottom-nav" aria-label="Main">
       <span className="bottom-nav__brand">
@@ -25,7 +53,8 @@ export default function BottomNav({ page, onNavigate, hasList, stapleCount, stor
         PantryPal
       </span>
       <div className="bottom-nav__tabs-wrap">
-        <div className="bottom-nav__tabs">
+        <div className="bottom-nav__tabs" ref={tabsRef}>
+          <div className="bottom-nav__indicator" ref={indicatorRef} aria-hidden />
           {TABS.map(({ id, label, Icon }) => {
             const active = page === id
             const badge =

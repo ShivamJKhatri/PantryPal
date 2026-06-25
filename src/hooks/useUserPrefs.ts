@@ -4,17 +4,25 @@ export type UserPrefs = {
   storeId: string
   storeName: string
   zipCode: string
+  cheapestMatch: boolean
+  flagLowConfidence: boolean
 }
 
 const STORAGE_KEY = 'pantrypal_user_prefs'
 
-const EMPTY_PREFS: UserPrefs = { storeId: '', storeName: '', zipCode: '' }
+const EMPTY_PREFS: UserPrefs = {
+  storeId: '',
+  storeName: '',
+  zipCode: '',
+  cheapestMatch: true,
+  flagLowConfidence: true,
+}
 
 function loadPrefs(): UserPrefs {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return EMPTY_PREFS
-    return JSON.parse(raw) as UserPrefs
+    return { ...EMPTY_PREFS, ...(JSON.parse(raw) as Partial<UserPrefs>) }
   } catch {
     return EMPTY_PREFS
   }

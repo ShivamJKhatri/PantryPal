@@ -55,18 +55,34 @@ export default function App() {
     }
   }, [staples])
 
+  const TAB_ORDER: Page[] = ['capture', 'list', 'pantry', 'settings']
+
   function navigate(next: Page, opts?: { listView?: ListView }) {
     const nextListView = opts?.listView ?? (next === 'list' ? listView : undefined)
     if (opts?.listView) setListView(opts.listView)
     if (next !== 'list') setListView({ kind: 'recipes' })
 
+    // Set direction for CSS slide transitions
+    const fromIdx = TAB_ORDER.indexOf(page)
+    const toIdx = TAB_ORDER.indexOf(next)
+    if (fromIdx !== -1 && toIdx !== -1 && fromIdx !== toIdx) {
+      document.documentElement.dataset.navDir = toIdx > fromIdx ? 'forward' : 'backward'
+    } else {
+      delete document.documentElement.dataset.navDir
+    }
+
     const apply = () => {
+      // Reset scroll on page change
+      document.querySelector<HTMLElement>('.main')?.scrollTo({ top: 0, behavior: 'instant' })
       setPage(next)
       pushAppState(next, next === 'list' ? nextListView : undefined)
     }
 
     if (typeof document !== 'undefined' && 'startViewTransition' in document) {
-      ;(document as Document & { startViewTransition: (cb: () => void) => void }).startViewTransition(apply)
+      const vt = (document as Document & {
+        startViewTransition: (cb: () => void) => { finished: Promise<void> }
+      }).startViewTransition(apply)
+      vt.finished.finally(() => { delete document.documentElement.dataset.navDir })
     } else {
       apply()
     }
