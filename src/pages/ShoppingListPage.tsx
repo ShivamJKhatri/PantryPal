@@ -105,13 +105,15 @@ function ItemRow({
       key={item.id}
       ref={flipRef(item.id)}
       className={`item-row${isBought ? ' item-row--bought' : ''}`}
-      style={{ '--i': index } as React.CSSProperties}
+      style={{ '--i': index, cursor: shoppingMode && !isBought ? 'pointer' : undefined } as React.CSSProperties}
+      onClick={shoppingMode && !isBought && onBuy ? () => onBuy() : undefined}
     >
       <button
         type="button"
         className={`exclude-btn press${isBought ? ' bought' : shoppingMode ? ' shopping-mode' : ''}`}
         title={isBought ? 'Bought' : shoppingMode ? 'Mark as bought & save to pantry' : 'Remove from list'}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation()
           if (onBuy) { onBuy(); return }
           onToggleExclude(item.id)
         }}
@@ -130,7 +132,7 @@ function ItemRow({
         {detail && <span className="item-detail">{detail}</span>}
         {item.aisle && <span className="item-aisle">{item.aisle}</span>}
       </div>
-      <div className="item-actions">
+      <div className="item-actions" onClick={(e) => e.stopPropagation()}>
         <div className="item-qty">
           <IconButton
             label="Decrease quantity"
