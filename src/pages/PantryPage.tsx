@@ -1,11 +1,8 @@
 import { useRef, useState } from 'react'
 import type { PantryStaple } from '../types/models.ts'
-import PageShell from '../components/PageShell.tsx'
 import Card from '../components/Card.tsx'
-import EmptyState from '../components/EmptyState.tsx'
 import Chip from '../components/Chip.tsx'
-import IconButton from '../components/IconButton.tsx'
-import { IconJar, IconPlus, IconClose } from '../components/icons.tsx'
+import { IconPlus } from '../components/icons.tsx'
 import { showToast } from '../hooks/useToast.ts'
 import { useFlip } from '../hooks/useFlip.ts'
 
@@ -48,22 +45,18 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
   }
 
   return (
-    <PageShell title="My pantry" subtitle="Items here are auto-excluded from your shopping lists">
-      {staples.length === 0 ? (
-        <EmptyState
-          icon={<IconJar size={28} />}
-          title="Mark what you already have"
-          description="We'll skip these ingredients on every shopping list you build."
-          action={{ label: 'Add your first staple', onClick: () => inputRef.current?.focus() }}
-        />
-      ) : null}
+    <div className="pantry-page-wrap">
+      <h1 className="pantry-page-title">Pantry staples</h1>
+      <p className="pantry-page-subtitle">
+        Items marked "on hand" are automatically skipped on every shopping list you build.
+      </p>
 
       <Card>
         <form className="add-form" onSubmit={handleSubmit}>
           <input
             ref={inputRef}
             type="text"
-            placeholder="Add an item…"
+            placeholder="Add a staple…"
             value={input}
             onChange={(e) => setInput(e.target.value)}
           />
@@ -72,6 +65,38 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
           </button>
         </form>
       </Card>
+
+      {staples.length > 0 && (
+        <ul className="pantry-staple-list stagger">
+          {staples.map((staple, index) => (
+            <li
+              key={staple.id}
+              ref={flipRef(staple.id)}
+              className="pantry-staple-row"
+              style={{ '--i': index } as React.CSSProperties}
+            >
+              <span className="pantry-staple-dot" />
+              <div className="pantry-staple-info">
+                <div className="pantry-staple-name">{staple.label}</div>
+                <div className="pantry-staple-meta">On hand · auto-excluded from lists</div>
+              </div>
+              <label className="toggle" aria-label={`Remove ${staple.label} from pantry`}>
+                <input
+                  type="checkbox"
+                  className="toggle__input"
+                  defaultChecked
+                  onChange={() => {
+                    onRemove(staple.id)
+                    showToast(`Removed ${staple.label}`, 'default')
+                  }}
+                />
+                <span className="toggle__track" />
+                <span className="toggle__thumb" />
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <p className="pantry-section-title">Quick add</p>
       <div className="chip-grid">
@@ -85,26 +110,9 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
         ))}
       </div>
 
-      {staples.length > 0 && (
-        <>
-          <p className="pantry-section-title">Your staples ({staples.length})</p>
-          <ul className="staple-list stagger">
-            {staples.map((staple, index) => (
-              <li
-                key={staple.id}
-                ref={flipRef(staple.id)}
-                className="staple-row"
-                style={{ '--i': index } as React.CSSProperties}
-              >
-                <span>{staple.label}</span>
-                <IconButton label={`Remove ${staple.label}`} onClick={() => onRemove(staple.id)}>
-                  <IconClose size={18} />
-                </IconButton>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
-    </PageShell>
+      <p className="pantry-footer-note">
+        Pre-seeded with common staples · {staples.length} currently on hand
+      </p>
+    </div>
   )
 }

@@ -105,13 +105,15 @@ function ItemRow({
       key={item.id}
       ref={flipRef(item.id)}
       className={`item-row${isBought ? ' item-row--bought' : ''}`}
-      style={{ '--i': index } as React.CSSProperties}
+      style={{ '--i': index, cursor: shoppingMode ? 'pointer' : undefined } as React.CSSProperties}
+      onClick={shoppingMode && onBuy ? () => onBuy() : undefined}
     >
       <button
         type="button"
         className={`exclude-btn press${isBought ? ' bought' : shoppingMode ? ' shopping-mode' : ''}`}
         title={isBought ? 'Bought' : shoppingMode ? 'Mark as bought & save to pantry' : 'Remove from list'}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation()
           if (onBuy) { onBuy(); return }
           onToggleExclude(item.id)
         }}
@@ -130,7 +132,7 @@ function ItemRow({
         {detail && <span className="item-detail">{detail}</span>}
         {item.aisle && <span className="item-aisle">{item.aisle}</span>}
       </div>
-      <div className="item-actions">
+      <div className="item-actions" onClick={(e) => e.stopPropagation()}>
         <div className="item-qty">
           <IconButton
             label="Decrease quantity"
@@ -256,6 +258,10 @@ function ItemList({
     setBoughtIds((prev) => new Map(prev).set(id, ingredientName))
   }
 
+  function unbuyItem(id: string) {
+    setBoughtIds((prev) => { const next = new Map(prev); next.delete(id); return next })
+  }
+
   function ranOut(item: RecipeShoppingListItem, stapleId: string) {
     onRemoveFromPantry?.(stapleId)
     const qty = Math.max(1, item.quantityToBuy || 1)
@@ -284,7 +290,7 @@ function ItemList({
               onAddToPantry={onAddToPantry}
               shoppingMode={shoppingMode}
               isBought={boughtIds.has(item.id)}
-              onBuy={shoppingMode ? () => buyItem(item.id, item.ingredientName) : undefined}
+              onBuy={shoppingMode ? () => boughtIds.has(item.id) ? unbuyItem(item.id) : buyItem(item.id, item.ingredientName) : undefined}
             />
           ))}
         </ul>
@@ -519,9 +525,9 @@ export default function ShoppingListPage({
     existing: RecipeShoppingListItem[],
     item: RecipeShoppingListItem,
   ): RecipeShoppingListItem[] {
-    if (!item.productId || item.notFound) return [...existing, item]
+    if (!item.productId || item.notFound) return [item, ...existing]
     const match = existing.find((i) => i.productId === item.productId)
-    if (!match) return [...existing, item]
+    if (!match) return [item, ...existing]
     const qty = match.quantityToBuy + item.quantityToBuy
     return existing.map((i) =>
       i.id === match.id
@@ -589,68 +595,120 @@ export default function ShoppingListPage({
 
   if (view.kind === 'detail' && selectedRecipe) {
     const inCart = cartRecipeIds.includes(selectedRecipe.id)
-    const { count: detailCount } = recipeListStats(selectedRecipe.items, staples)
+    const allItems = applyPantryExclusions(selectedRecipe.items, staples)
+    const activeItems = allItems.filter((i) => !i.excluded && !i.notFound)
+    const pantryExcluded = allItems.filter((i) => i.excluded)
+    const totalBuy = calcActiveTotal(allItems)
+    const totalSaved = selectedRecipe.items.reduce((s, i) => s + i.price, 0) - totalBuy
+    const storeLabel = storeDisplayName(selectedRecipe.storeId)
 
     return (
-      <PageShell
-        title={selectedRecipe.recipeTitle}
-        trailing={
-          <div className="header-actions">
-            <CartButton />
-            <button type="button" className="back-btn press" onClick={onBack}>
-              <IconChevronLeft size={20} />
-              Back
-            </button>
+      <PageShell>
+        <div className="list-detail-layout">
+          {/* Left: main content */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s-4)', marginBottom: 'var(--s-5)' }}>
+              <div>
+                <span className="list-detail-label">Your shopping list</span>
+                <h1 className="list-detail-title">{selectedRecipe.recipeTitle}</h1>
+                <div className="list-meta">
+                  <span>{activeItems.length} items</span>
+                  {selectedRecipe.sourceUrl && (
+                    <>
+                      <span className="list-meta__sep" aria-hidden>·</span>
+                      <a className="source-link" href={selectedRecipe.sourceUrl} target="_blank" rel="noreferrer">
+                        View recipe <IconExternal size={14} />
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+              <button type="button" className="list-detail-new-recipe" onClick={onNewRecipe}>
+                + New recipe
+              </button>
+            </div>
+
+            {pantryExcluded.length > 0 && (
+              <div className="pantry-savings-banner">
+                <div className="pantry-savings-banner__icon">
+                  <IconCheck size={14} />
+                </div>
+                <div className="pantry-savings-banner__body">
+                  <div className="pantry-savings-banner__title">Pantry savings</div>
+                  <div className="pantry-savings-banner__sub">
+                    {pantryExcluded.map((i) => getItemDisplay(i).name).slice(0, 3).join(', ')}
+                    {pantryExcluded.length > 3 ? ` +${pantryExcluded.length - 3} more` : ''} already on hand
+                  </div>
+                </div>
+                {totalSaved > 0 && (
+                  <span className="pantry-savings-banner__amount">-${totalSaved.toFixed(2)}</span>
+                )}
+              </div>
+            )}
+
+            <ItemList
+              items={selectedRecipe.items}
+              staples={staples}
+              onItemsChange={(items) => onUpdateRecipe(selectedRecipe.id, items)}
+              onAddToPantry={onAddToPantry}
+            />
           </div>
-        }
-      >
-        <div className="list-meta">
-          <span>{storeDisplayName(selectedRecipe.storeId)} · {selectedRecipe.zipCode}</span>
-          <span className="list-meta__sep" aria-hidden>·</span>
-          <span>{detailCount} items</span>
-          {selectedRecipe.sourceUrl && (
-            <>
-              <span className="list-meta__sep" aria-hidden>·</span>
-              <a className="source-link" href={selectedRecipe.sourceUrl} target="_blank" rel="noreferrer">
-                View recipe <IconExternal size={14} />
-              </a>
-            </>
-          )}
-        </div>
 
-        <ItemList
-          items={selectedRecipe.items}
-          staples={staples}
-          onItemsChange={(items) => onUpdateRecipe(selectedRecipe.id, items)}
-          onAddToPantry={onAddToPantry}
-        />
-
-        <div className="recipe-detail-actions">
-          {inCart ? (
-            <Button
-              variant="secondary"
-              fullWidth
-              onClick={() => {
-                onRemoveRecipeFromCart(selectedRecipe.id)
-                showToast('Removed from cart', 'default')
-              }}
-            >
-              Remove from cart
-            </Button>
-          ) : (
-            <Button
-              fullWidth
-              onClick={() => {
-                onAddRecipeToCart(selectedRecipe.id)
-                showToast('Added to cart', 'success')
-              }}
-            >
-              Add all to cart
-            </Button>
-          )}
-          <Button variant="secondary" size="sm" onClick={onNewRecipe}>
-            + Another recipe
-          </Button>
+          {/* Right: cart sidebar */}
+          <div className="list-sidebar">
+            <div className="list-sidebar-card">
+              <div className="list-sidebar-title">Your cart</div>
+              <div className="list-sidebar-store">
+                <span className="list-sidebar-store-dot" />
+                {storeLabel} · {selectedRecipe.zipCode}
+              </div>
+              <div className="list-sidebar-rows">
+                <div className="list-sidebar-row">
+                  <span>{activeItems.length} items to buy</span>
+                  <span>${totalBuy.toFixed(2)}</span>
+                </div>
+                {pantryExcluded.length > 0 && totalSaved > 0 && (
+                  <div className="list-sidebar-row">
+                    <span>Pantry staples</span>
+                    <span style={{ color: 'var(--success)' }}>-${totalSaved.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+              <div className="list-sidebar-total">
+                <span className="list-sidebar-total__label">Estimated total</span>
+                <span className="list-sidebar-total__amount">$<CountUp value={totalBuy} /></span>
+                <span className="list-sidebar-total__note">Prices are estimates · updates as you edit</span>
+              </div>
+              <div className="list-sidebar-actions">
+                {inCart ? (
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => {
+                      onRemoveRecipeFromCart(selectedRecipe.id)
+                      showToast('Removed from cart', 'default')
+                    }}
+                  >
+                    Remove from cart
+                  </Button>
+                ) : (
+                  <Button
+                    fullWidth
+                    onClick={() => {
+                      onAddRecipeToCart(selectedRecipe.id)
+                      showToast('Added to cart', 'success')
+                    }}
+                  >
+                    Send to cart
+                  </Button>
+                )}
+                <Button variant="secondary" fullWidth onClick={onBack}>
+                  Back to recipes
+                </Button>
+              </div>
+              <p className="list-sidebar-footer">Prices sourced from {storeLabel} · may vary</p>
+            </div>
+          </div>
         </div>
       </PageShell>
     )
