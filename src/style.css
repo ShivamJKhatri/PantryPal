@@ -10,8 +10,8 @@ body {
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
   background-image:
-    radial-gradient(at 0% 0%, rgba(232, 240, 235, 0.45) 0, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(245, 244, 241, 0.6) 0, transparent 50%);
+    radial-gradient(at 0% 0%, rgba(230, 238, 224, 0.5) 0, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(247, 244, 239, 0.7) 0, transparent 50%);
   background-attachment: fixed;
 }
 
@@ -25,10 +25,11 @@ button, input { font-family: inherit; -webkit-tap-highlight-color: transparent; 
 ::selection { background: var(--accent-soft); color: var(--text); }
 
 h1 {
+  font-family: var(--font-serif);
   font-size: var(--fs-2xl);
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
 .subtitle {
@@ -190,15 +191,15 @@ h1 {
   cursor: pointer;
   border: 1px solid transparent;
   white-space: nowrap;
-  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
+  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast), transform var(--dur-fast), box-shadow var(--dur-fast);
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
 .btn--sm { padding: 6px 12px; font-size: var(--fs-sm); height: 32px; }
 .btn--md { padding: 10px 16px; font-size: var(--fs-sm); height: 40px; }
 .btn--lg { padding: 14px 20px; font-size: var(--fs-base); height: 48px; }
 .btn--full { width: 100%; }
-.btn--primary { background: var(--accent); color: var(--text-inverse); }
-.btn--primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn--primary { background: var(--accent); color: var(--text-inverse); border-radius: var(--r-pill); }
+.btn--primary:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(45,80,22,0.22); }
 .btn--secondary { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
 .btn--secondary:hover:not(:disabled) { background: var(--surface-2); }
 .btn--ghost { background: transparent; color: var(--text-muted); }
@@ -223,7 +224,7 @@ h1 {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 .card--none { padding: 0; }
 .card--sm { padding: var(--s-3); }
