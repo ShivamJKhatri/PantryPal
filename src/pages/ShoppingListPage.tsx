@@ -525,9 +525,9 @@ export default function ShoppingListPage({
     existing: RecipeShoppingListItem[],
     item: RecipeShoppingListItem,
   ): RecipeShoppingListItem[] {
-    if (!item.productId || item.notFound) return [...existing, item]
+    if (!item.productId || item.notFound) return [item, ...existing]
     const match = existing.find((i) => i.productId === item.productId)
-    if (!match) return [...existing, item]
+    if (!match) return [item, ...existing]
     const qty = match.quantityToBuy + item.quantityToBuy
     return existing.map((i) =>
       i.id === match.id
