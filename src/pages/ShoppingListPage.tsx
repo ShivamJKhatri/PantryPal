@@ -105,8 +105,8 @@ function ItemRow({
       key={item.id}
       ref={flipRef(item.id)}
       className={`item-row${isBought ? ' item-row--bought' : ''}`}
-      style={{ '--i': index, cursor: shoppingMode && !isBought ? 'pointer' : undefined } as React.CSSProperties}
-      onClick={shoppingMode && !isBought && onBuy ? () => onBuy() : undefined}
+      style={{ '--i': index, cursor: shoppingMode ? 'pointer' : undefined } as React.CSSProperties}
+      onClick={shoppingMode && onBuy ? () => onBuy() : undefined}
     >
       <button
         type="button"
@@ -258,6 +258,10 @@ function ItemList({
     setBoughtIds((prev) => new Map(prev).set(id, ingredientName))
   }
 
+  function unbuyItem(id: string) {
+    setBoughtIds((prev) => { const next = new Map(prev); next.delete(id); return next })
+  }
+
   function ranOut(item: RecipeShoppingListItem, stapleId: string) {
     onRemoveFromPantry?.(stapleId)
     const qty = Math.max(1, item.quantityToBuy || 1)
@@ -286,7 +290,7 @@ function ItemList({
               onAddToPantry={onAddToPantry}
               shoppingMode={shoppingMode}
               isBought={boughtIds.has(item.id)}
-              onBuy={shoppingMode ? () => buyItem(item.id, item.ingredientName) : undefined}
+              onBuy={shoppingMode ? () => boughtIds.has(item.id) ? unbuyItem(item.id) : buyItem(item.id, item.ingredientName) : undefined}
             />
           ))}
         </ul>
