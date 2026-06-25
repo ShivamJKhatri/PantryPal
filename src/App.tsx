@@ -119,9 +119,11 @@ export default function App() {
           }}
           hasList={hasRecipes}
           stapleCount={staples.length}
+          storeName={prefs.storeName}
+          zipCode={prefs.zipCode}
         />
       )}
-      <main className={`main${isOnboarding ? ' main--onboarding' : ''}`} key={page}>
+      <main className={`main${isOnboarding ? ' main--onboarding' : ''}${page === 'capture' || page === 'list' ? ' main--wide' : ''}`} key={page}>
         {page === 'capture' && (
           <CapturePage
             prefs={prefs}
