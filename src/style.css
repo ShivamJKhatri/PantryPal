@@ -1163,6 +1163,102 @@ h1 {
   color: var(--text-subtle);
 }
 
+/* ── Settings store list ─────────────────────────────────────────────────── */
+.settings-stores-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5) var(--s-3);
+}
+.settings-stores-zip {
+  display: block;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.settings-stores-gas {
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+  white-space: nowrap;
+}
+.settings-store-list {
+  list-style: none;
+}
+.settings-store-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-5);
+  border-top: 1px solid var(--border);
+  transition: background 100ms;
+}
+.settings-store-row.current {
+  background: var(--accent-soft);
+}
+.settings-store-row__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.settings-store-row__badges {
+  display: flex;
+  gap: var(--s-1);
+  flex-wrap: wrap;
+}
+.settings-store-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.settings-store-badge.best {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+.settings-store-badge.current {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+.settings-store-row__name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-store-row__meta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.settings-store-row__right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.settings-store-row__check {
+  color: var(--accent);
+}
+.settings-store-switch {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
+}
+.settings-store-switch:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
 /* ── Store comparison (recipe detail) ───────────────────────────────────── */
 .store-comparison {
   margin-top: var(--s-4);
@@ -1207,10 +1303,15 @@ h1 {
   background: var(--accent-soft);
 }
 
+.store-comparison__row-badges {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 2px;
+}
 .store-comparison__row-left {
   display: flex;
-  align-items: center;
-  gap: var(--s-2);
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
 }
 .store-comparison__badge {
@@ -1221,19 +1322,21 @@ h1 {
   font-size: 9px;
   font-weight: 700;
   flex-shrink: 0;
+  line-height: 1.6;
 }
 .store-comparison__badge--current {
-  background: var(--surface-2);
-  color: var(--text-muted);
-  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
 }
-.store-comparison__name { font-weight: 500; }
-.store-comparison__dist { color: var(--text-muted); white-space: nowrap; }
+.store-comparison__name { font-weight: 600; font-size: var(--fs-xs); }
+.store-comparison__dist { color: var(--text-muted); font-size: 10px; white-space: nowrap; }
 
 .store-comparison__row-right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  gap: 2px;
   flex-shrink: 0;
 }
 .store-comparison__total {
@@ -1244,27 +1347,33 @@ h1 {
   color: var(--text-muted);
   font-size: 10px;
 }
-
-.store-comparison__tip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-2);
-  font-size: var(--fs-xs);
-  color: var(--text-muted);
-}
 .store-comparison__switch {
-  flex-shrink: 0;
-  background: none;
-  border: none;
+  margin-top: 2px;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   color: var(--accent);
-  font-size: var(--fs-xs);
+  font-size: 10px;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--r-sm);
+  white-space: nowrap;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
 }
-.store-comparison__switch:hover { background: var(--accent-soft); }
+.store-comparison__switch:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.store-comparison__tip {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  padding-top: var(--s-2);
+  line-height: 1.4;
+}
+.store-comparison__tip--good {
+  color: var(--success);
+}
 
 /* ── Mobile tweaks ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {

@@ -424,11 +424,11 @@ function StoreComparison({
   return (
     <Card padding="sm" className="store-comparison">
       <div className="store-comparison__header">
-        <span className="store-comparison__title">Best value nearby</span>
-        {gasPrice && <span className="store-comparison__note">${gasPrice.toFixed(2)}/gal est.</span>}
+        <span className="store-comparison__title">All nearby stores</span>
+        {gasPrice && <span className="store-comparison__note">${gasPrice.toFixed(2)}/gal · 28 mpg</span>}
       </div>
       <ul className="store-comparison__list">
-        {options.slice(0, 3).map((opt, i) => {
+        {options.map((opt, i) => {
           const isCurrent = opt.id === currentStoreId
           return (
             <li
@@ -436,17 +436,26 @@ function StoreComparison({
               className={`store-comparison__row${isCurrent ? ' current' : ''}${i === 0 ? ' best' : ''}`}
             >
               <div className="store-comparison__row-left">
-                {i === 0 && <span className="store-comparison__badge">Best</span>}
-                {isCurrent && i !== 0 && <span className="store-comparison__badge store-comparison__badge--current">Yours</span>}
+                <div className="store-comparison__row-badges">
+                  {i === 0 && <span className="store-comparison__badge">Best</span>}
+                  {isCurrent && <span className="store-comparison__badge store-comparison__badge--current">Yours</span>}
+                </div>
                 <span className="store-comparison__name">{opt.name}</span>
-                <span className="store-comparison__dist">{opt.distance} mi</span>
+                <span className="store-comparison__dist">{opt.distance} mi · ${opt.travelCost.toFixed(2)} gas</span>
               </div>
               <div className="store-comparison__row-right">
-                <span className="store-comparison__total">${opt.totalWithTravel.toFixed(2)}</span>
+                <span className="store-comparison__total">
+                  {opt.groceryEstimate !== null ? `$${opt.totalWithTravel.toFixed(2)}` : `+$${opt.travelCost.toFixed(2)}`}
+                </span>
                 {opt.groceryEstimate !== null && (
                   <span className="store-comparison__breakdown">
-                    ${opt.groceryEstimate.toFixed(2)} + ${opt.travelCost.toFixed(2)} gas
+                    ${opt.groceryEstimate.toFixed(2)} groceries + ${opt.travelCost.toFixed(2)} gas
                   </span>
+                )}
+                {!isCurrent && (
+                  <button type="button" className="store-comparison__switch press" onClick={onGoToSettings}>
+                    Switch →
+                  </button>
                 )}
               </div>
             </li>
@@ -454,14 +463,11 @@ function StoreComparison({
         })}
       </ul>
       {isAlreadyBest ? (
-        <p className="store-comparison__tip">You're at the best nearby option!</p>
+        <p className="store-comparison__tip store-comparison__tip--good">You're already at the best nearby option</p>
       ) : savings > 0.25 ? (
-        <div className="store-comparison__tip">
-          <span>Switch to {best.name} and save ${savings.toFixed(2)} total</span>
-          <button type="button" className="store-comparison__switch press" onClick={onGoToSettings}>
-            Update store →
-          </button>
-        </div>
+        <p className="store-comparison__tip">
+          Switch to {best.name} to save <strong>${savings.toFixed(2)}</strong> on this recipe
+        </p>
       ) : null}
     </Card>
   )

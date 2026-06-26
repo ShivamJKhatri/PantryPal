@@ -51,9 +51,16 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
   const [loadingStores, setLoadingStores] = useState(false)
   const [storesError, setStoresError] = useState('')
 
-  // Auto-fetch stores when editing mode opens with a valid ZIP
+  // Auto-fetch stores on mount (main view) and when edit mode opens
   useEffect(() => {
-    if (editing && zipCode && /^\d{5}$/.test(zipCode)) {
+    if (prefs.zipCode && /^\d{5}$/.test(prefs.zipCode) && !isOnboarding) {
+      void fetchStores(prefs.zipCode)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (editing && zipCode && /^\d{5}$/.test(zipCode) && !storeOptions) {
       void fetchStores(zipCode)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,6 +82,13 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
     } finally {
       setLoadingStores(false)
     }
+  }
+
+  function switchStore(newStoreId: string) {
+    const storeName =
+      storeOptions?.find((o) => o.id === newStoreId)?.name ??
+      STORE_OPTIONS.find((s) => s.id === newStoreId)?.name ?? ''
+    onSave({ ...prefs, storeId: newStoreId, storeName })
   }
 
   function validateZip(): boolean {
@@ -311,34 +325,83 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
     )
   }
 
-  // ── Main settings view — section-card design ──────────────────────────────
+  // ── Main settings view ────────────────────────────────────────────────────
   return (
     <div className="settings-page-wrap">
       <h1 className="settings-page-title">Settings</h1>
 
+      {/* Store comparison card */}
       <div className="settings-section-card">
-        <span className="settings-section-label">Your store</span>
-        <div className="settings-section-row">
-          <div className="settings-section-row__label">Preferred store</div>
-          <div className="settings-section-row__value">
-            <span className="settings-section-row__dot" />
-            {prefs.storeName || '—'}
+        <div className="settings-stores-header">
+          <div>
+            <span className="settings-section-label" style={{ padding: 0 }}>Stores near you</span>
+            <span className="settings-stores-zip">ZIP {prefs.zipCode}</span>
+          </div>
+          <div style={{ display: 'flex', gap: 'var(--s-2)', alignItems: 'center' }}>
+            {gasPrice !== null && (
+              <span className="settings-stores-gas">${gasPrice.toFixed(2)}/gal · 28 mpg</span>
+            )}
+            <button
+              type="button"
+              className="settings-edit-link"
+              onClick={() => setEditing(true)}
+            >
+              Change ZIP
+            </button>
           </div>
         </div>
-        <div className="settings-section-row">
-          <div className="settings-section-row__label">ZIP code</div>
-          <div className="settings-section-row__value">{prefs.zipCode || '—'}</div>
-        </div>
-        <div className="settings-section-row">
-          <div className="settings-section-row__label">Pricing mode</div>
-          <span className="settings-section-row__chip">Live API pricing</span>
-        </div>
-        <div className="settings-section-row">
-          <div />
-          <button type="button" className="settings-edit-link" onClick={() => setEditing(true)}>
-            Change store or ZIP code
-          </button>
-        </div>
+
+        {loadingStores ? (
+          <div className="store-loading" style={{ padding: 'var(--s-4)' }}>
+            <Spinner size="sm" /> Finding stores near {prefs.zipCode}…
+          </div>
+        ) : storesError ? (
+          <p className="field-error" style={{ padding: 'var(--s-4)' }}>{storesError}</p>
+        ) : storeOptions ? (
+          <ul className="settings-store-list">
+            {storeOptions.map((opt, i) => {
+              const isCurrent = opt.id === prefs.storeId
+              const isBest = i === 0
+              return (
+                <li key={opt.id} className={`settings-store-row${isCurrent ? ' current' : ''}`}>
+                  <div className="settings-store-row__left">
+                    <div className="settings-store-row__badges">
+                      {isBest && <span className="settings-store-badge best">Best value</span>}
+                      {isCurrent && <span className="settings-store-badge current">Your store</span>}
+                    </div>
+                    <span className="settings-store-row__name">{opt.name}</span>
+                    <span className="settings-store-row__meta">
+                      {opt.distance} mi · ${opt.travelCost.toFixed(2)} gas (round trip)
+                    </span>
+                  </div>
+                  <div className="settings-store-row__right">
+                    {isCurrent ? (
+                      <IconCheck size={18} className="settings-store-row__check" />
+                    ) : (
+                      <button
+                        type="button"
+                        className="settings-store-switch press"
+                        onClick={() => switchStore(opt.id)}
+                      >
+                        Switch
+                      </button>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <div style={{ padding: 'var(--s-4)' }}>
+            <button
+              type="button"
+              className="settings-edit-link"
+              onClick={() => prefs.zipCode ? void fetchStores(prefs.zipCode) : setEditing(true)}
+            >
+              {prefs.zipCode ? 'Load stores near ' + prefs.zipCode : 'Set your ZIP to see nearby stores'}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="settings-section-card">
@@ -372,7 +435,7 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
       </div>
 
       <p className="settings-page-footer">
-        Prices are estimates sourced from store APIs · not affiliated with any retailer
+        Distances are estimates · gas at ${gasPrice?.toFixed(2) ?? '3.45'}/gal · not affiliated with any retailer
       </p>
     </div>
   )

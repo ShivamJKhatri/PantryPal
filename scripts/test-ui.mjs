@@ -349,14 +349,19 @@ try {
   const h1 = await page.textContent('.settings-page-title')
   if (h1 && h1.includes('Settings')) { ok('settings h1: ' + h1.trim()) } else { fail('settings h1', h1) }
 
-  // Store name is shown in section row values
-  const rowValues = await page.$$('.settings-section-row__value')
-  const storeText = rowValues.length > 0 ? (await rowValues[0].textContent() ?? '').trim() : ''
-  if (storeText) { ok('store shown: ' + storeText) } else { fail('store shown', 'not found') }
+  // Store list: wait for store rows to load (auto-fetches on mount)
+  await page.waitForSelector('.settings-store-row', { timeout: 5000 })
+  const storeRows = await page.$$('.settings-store-row')
+  if (storeRows.length > 0) { ok(storeRows.length + ' store options shown') } else { fail('store rows', 'none found') }
 
-  // ZIP is in the second row value
-  const zipText = rowValues.length > 1 ? (await rowValues[1].textContent() ?? '').trim() : ''
-  if (zipText.includes('10001')) { ok('zip shown: ' + zipText) } else { fail('zip shown', 'got: ' + zipText) }
+  // Current store row is highlighted
+  const currentRow = await page.$('.settings-store-row.current .settings-store-row__name')
+  const storeText = currentRow ? (await currentRow.textContent() ?? '').trim() : ''
+  if (storeText) { ok('current store shown: ' + storeText) } else { fail('store shown', 'not found') }
+
+  // ZIP shown in header
+  const zipText = await page.textContent('.settings-stores-zip')
+  if (zipText && zipText.includes('10001')) { ok('zip shown: ' + zipText.trim()) } else { fail('zip shown', 'got: ' + zipText) }
 } catch (e) { fail('settings page', e.message) }
 
 // ── 12. Shopping List nav badge ───────────────────────────────────────────────
