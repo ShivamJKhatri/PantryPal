@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function CountUp({ value, duration = 320 }: { value: number; duration?: number }) {
+export default function CountUp({ value, duration = 180 }: { value: number; duration?: number }) {
   const [display, setDisplay] = useState(value)
   const prev = useRef(value)
 

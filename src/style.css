@@ -9,10 +9,10 @@ body {
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
+  /* Static gradient — no background-attachment:fixed which forces full repaint on every scroll */
   background-image:
     radial-gradient(at 0% 0%, rgba(230, 238, 224, 0.5) 0, transparent 50%),
     radial-gradient(at 100% 100%, rgba(247, 244, 239, 0.7) 0, transparent 50%);
-  background-attachment: fixed;
 }
 
 button, input { font-family: inherit; -webkit-tap-highlight-color: transparent; }
@@ -55,22 +55,25 @@ h1 {
 .anim-scale-in { animation: scale-in var(--dur-base) var(--ease-out-expo) both }
 
 .stagger > * {
-  animation: fade-up 200ms var(--ease-out-quart) both;
-  animation-delay: calc(min(var(--i, 0), 8) * 25ms);
+  animation: fade-up 180ms var(--ease-out-quart) both;
+  animation-delay: calc(min(var(--i, 0), 6) * 18ms);
+  will-change: transform, opacity;
 }
 
 .press { transition: transform var(--dur-fast) var(--ease-spring) }
 .press:active { transform: scale(0.97) }
 
-/* Default crossfade */
-::view-transition-old(root) { animation: vt-out-fade  240ms var(--ease-out-quart) both }
-::view-transition-new(root) { animation: vt-in-fade   280ms var(--ease-out-expo)  both }
+/* Default crossfade — no scale to avoid GPU compositing cost */
+@keyframes vt-out-fade  { to   { opacity: 0 } }
+@keyframes vt-in-fade   { from { opacity: 0 } }
+::view-transition-old(root) { animation: vt-out-fade  160ms var(--ease-out-quart) both }
+::view-transition-new(root) { animation: vt-in-fade   200ms var(--ease-out-expo)  both }
 
 /* Direction-aware slide transitions */
-:root[data-nav-dir="forward"]  ::view-transition-old(root) { animation: vt-out-left  200ms var(--ease-out-quart) both }
-:root[data-nav-dir="forward"]  ::view-transition-new(root) { animation: vt-in-right  300ms var(--ease-out-expo)  both }
-:root[data-nav-dir="backward"] ::view-transition-old(root) { animation: vt-out-right 200ms var(--ease-out-quart) both }
-:root[data-nav-dir="backward"] ::view-transition-new(root) { animation: vt-in-left   300ms var(--ease-out-expo)  both }
+:root[data-nav-dir="forward"]  ::view-transition-old(root) { animation: vt-out-left  160ms var(--ease-out-quart) both }
+:root[data-nav-dir="forward"]  ::view-transition-new(root) { animation: vt-in-right  220ms var(--ease-out-expo)  both }
+:root[data-nav-dir="backward"] ::view-transition-old(root) { animation: vt-out-right 160ms var(--ease-out-quart) both }
+:root[data-nav-dir="backward"] ::view-transition-new(root) { animation: vt-in-left   220ms var(--ease-out-expo)  both }
 
 /* ── App shell ───────────────────────────────────────────────────────────── */
 .app {
@@ -78,6 +81,7 @@ h1 {
   flex-direction: column;
   min-height: 100dvh;
   overflow-x: clip; /* prevent slide-transition overflow flash */
+  isolation: isolate; /* new stacking context — prevents blur filter from leaking */
 }
 
 .main {
@@ -87,6 +91,7 @@ h1 {
   margin: 0 auto;
   padding: var(--s-6) var(--s-4);
   padding-bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + var(--s-6));
+  contain: paint;
 }
 
 .main--onboarding {
@@ -112,9 +117,9 @@ h1 {
   align-items: center;
   height: calc(var(--bottom-nav-height) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
-  background: rgba(240, 237, 230, 0.88);
-  backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  background: rgba(240, 237, 230, 0.96);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   border-top: 1px solid var(--border);
 }
 
@@ -614,7 +619,8 @@ h1 {
   border-bottom: 1px solid var(--border);
   font-size: var(--fs-sm);
   align-items: center;
-  transition: background 140ms;
+  transition: background 100ms;
+  touch-action: pan-y;
 }
 .item-row:hover { background: var(--bg-elevated); }
 .item-row:last-child { border-bottom: none; }
@@ -1493,29 +1499,29 @@ h1 {
 /* ── Entrance animations ─────────────────────────────────────────────────── */
 
 /* Capture hero — staggered children */
-.capture-hero > :nth-child(1) { animation: fade-up 320ms var(--ease-out-expo) 0ms   both }
-.capture-hero > :nth-child(2) { animation: fade-up 320ms var(--ease-out-expo) 60ms  both }
-.capture-hero > :nth-child(3) { animation: fade-up 320ms var(--ease-out-expo) 120ms both }
-.capture-hero > :nth-child(4) { animation: fade-up 320ms var(--ease-out-expo) 190ms both }
-.capture-card-col             { animation: fade-up 360ms var(--ease-out-expo) 80ms  both }
+.capture-hero > :nth-child(1) { animation: fade-up 220ms var(--ease-out-expo) 0ms  both }
+.capture-hero > :nth-child(2) { animation: fade-up 220ms var(--ease-out-expo) 40ms both }
+.capture-hero > :nth-child(3) { animation: fade-up 220ms var(--ease-out-expo) 80ms both }
+.capture-hero > :nth-child(4) { animation: fade-up 220ms var(--ease-out-expo) 120ms both }
+.capture-card-col             { animation: fade-up 240ms var(--ease-out-expo) 60ms  both }
 
 /* Settings + Pantry page entrance */
-.settings-page-wrap > * { animation: fade-up 280ms var(--ease-out-expo) both }
+.settings-page-wrap > * { animation: fade-up 200ms var(--ease-out-expo) both }
 .settings-page-wrap > :nth-child(1) { animation-delay: 0ms }
-.settings-page-wrap > :nth-child(2) { animation-delay: 60ms }
-.settings-page-wrap > :nth-child(3) { animation-delay: 100ms }
-.settings-page-wrap > :nth-child(4) { animation-delay: 140ms }
+.settings-page-wrap > :nth-child(2) { animation-delay: 40ms }
+.settings-page-wrap > :nth-child(3) { animation-delay: 70ms }
+.settings-page-wrap > :nth-child(4) { animation-delay: 100ms }
 
-.pantry-page-wrap > * { animation: fade-up 280ms var(--ease-out-expo) both }
+.pantry-page-wrap > * { animation: fade-up 200ms var(--ease-out-expo) both }
 .pantry-page-wrap > :nth-child(1) { animation-delay: 0ms }
-.pantry-page-wrap > :nth-child(2) { animation-delay: 50ms }
-.pantry-page-wrap > :nth-child(3) { animation-delay: 90ms }
-.pantry-page-wrap > :nth-child(4) { animation-delay: 130ms }
-.pantry-page-wrap > :nth-child(5) { animation-delay: 160ms }
+.pantry-page-wrap > :nth-child(2) { animation-delay: 35ms }
+.pantry-page-wrap > :nth-child(3) { animation-delay: 60ms }
+.pantry-page-wrap > :nth-child(4) { animation-delay: 85ms }
+.pantry-page-wrap > :nth-child(5) { animation-delay: 110ms }
 
 /* List detail entrance */
-.list-detail-layout > :nth-child(1) { animation: fade-up 300ms var(--ease-out-expo) 0ms   both }
-.list-detail-layout > :nth-child(2) { animation: fade-up 300ms var(--ease-out-expo) 80ms  both }
+.list-detail-layout > :nth-child(1) { animation: fade-up 200ms var(--ease-out-expo) 0ms  both }
+.list-detail-layout > :nth-child(2) { animation: fade-up 200ms var(--ease-out-expo) 50ms both }
 
 /* ── Button ripple ───────────────────────────────────────────────────────── */
 .btn--primary { position: relative; overflow: hidden; }
@@ -1536,8 +1542,8 @@ h1 {
 
 /* ── Pantry staple row entrance ──────────────────────────────────────────── */
 .pantry-staple-list .pantry-staple-row {
-  animation: fade-up 220ms var(--ease-out-expo) both;
-  animation-delay: calc(var(--i, 0) * 30ms);
+  animation: fade-up 180ms var(--ease-out-expo) both;
+  animation-delay: calc(min(var(--i, 0), 8) * 18ms);
 }
 
 /* ── Recipe card grid desktop ────────────────────────────────────────────── */

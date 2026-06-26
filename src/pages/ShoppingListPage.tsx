@@ -405,12 +405,14 @@ function StoreComparison({
 }) {
   const [options, setOptions] = useState<StoreOption[] | null>(null)
   const [gasPrice, setGasPrice] = useState<number | null>(null)
+  // Round to nearest $0.50 so minor qty changes don't trigger a refetch
+  const stableTotal = Math.round(estimatedTotal * 2) / 2
 
   useEffect(() => {
-    getStoreOptions(zipCode, estimatedTotal)
+    getStoreOptions(zipCode, stableTotal)
       .then((r) => { setOptions(r.stores); setGasPrice(r.gasPrice) })
       .catch(() => {})
-  }, [zipCode, estimatedTotal])
+  }, [zipCode, stableTotal])
 
   if (!options) return null
 
