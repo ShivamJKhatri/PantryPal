@@ -60,6 +60,24 @@ await page.route('**/api/match-item', route => {
 await page.route('**/api/parse-screenshot', route => {
   route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_LIST) })
 })
+await page.route('**/api/store-options*', route => {
+  route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({
+      stores: [
+        { id: 'store-walmart',    name: 'Walmart',     distance: 0.8, travelCost: 0.20, groceryEstimate: null, totalWithTravel: 0.20 },
+        { id: 'store-kroger',     name: 'Kroger',      distance: 1.2, travelCost: 0.29, groceryEstimate: null, totalWithTravel: 0.29 },
+        { id: 'store-safeway',    name: 'Safeway',     distance: 2.1, travelCost: 0.52, groceryEstimate: null, totalWithTravel: 0.52 },
+        { id: 'store-target',     name: 'Target',      distance: 3.4, travelCost: 0.84, groceryEstimate: null, totalWithTravel: 0.84 },
+        { id: 'store-publix',     name: 'Publix',      distance: 4.0, travelCost: 0.99, groceryEstimate: null, totalWithTravel: 0.99 },
+        { id: 'store-wholefoods', name: 'Whole Foods', distance: 5.5, travelCost: 1.36, groceryEstimate: null, totalWithTravel: 1.36 },
+      ],
+      gasPrice: 3.45,
+      mpg: 28,
+    }),
+  })
+})
 
 const consoleErrors = []
 page.on('console', msg => { if (msg.type() === 'error') { consoleErrors.push(msg.text()) } })
@@ -85,7 +103,7 @@ try {
 } catch (e) { fail('nav', e.message) }
 
 // ── 3. Onboarding / Settings page ────────────────────────────────────────────
-console.log('\n[3] Onboarding — set store + ZIP')
+console.log('\n[3] Onboarding — ZIP first, then ranked stores')
 try {
   const h1 = await page.textContent('h1')
   if (h1 && h1.includes('Welcome to PantryPal')) {
@@ -94,21 +112,24 @@ try {
     fail('onboarding h1', 'got: ' + h1)
   }
 
-  const storeBtn = await page.$('.store-btn')
-  if (storeBtn) {
-    await storeBtn.click()
-    ok('selected a store')
-  } else {
-    fail('store buttons', 'none found')
-  }
-
-  await page.click('button[type="submit"]')
+  // Step 1: ZIP entry
   await page.waitForSelector('#zip', { timeout: 3000 })
-  ok('onboarding step 2 shown')
-
   await page.fill('#zip', '10001')
+  ok('ZIP entered')
+
+  // Advance to store ranking (triggers mocked /api/store-options)
   await page.click('button[type="submit"]')
-  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.toLowerCase().includes('add a recipe'), { timeout: 3000 })
+  await page.waitForSelector('.store-rank-btn', { timeout: 5000 })
+  ok('store ranking shown after ZIP submitted')
+
+  // Best store is auto-selected; verify at least one button is present
+  const rankBtns = await page.$$('.store-rank-btn')
+  if (rankBtns.length === 6) { ok('all 6 stores ranked') } else { fail('store rank count', 'got ' + rankBtns.length) }
+
+  // Click "Get started" — best store already selected
+  await page.click('button[type="submit"]')
+  // Partner redesigned capture page heading to "Your groceries, turned into a priced cart"
+  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.toLowerCase().includes('groceries'), { timeout: 3000 })
   ok('onboarding saved → navigated to capture page')
 
   const tabs = await page.$$('.bottom-nav__tab')
@@ -119,7 +140,9 @@ try {
 console.log('\n[4] Capture page')
 try {
   const h1 = await page.textContent('h1')
-  if (h1 && h1.toLowerCase().includes('add a recipe')) { ok('h1: ' + h1.trim()) } else { fail('h1', h1) }
+  if (h1 && (h1.toLowerCase().includes('groceries') || h1.toLowerCase().includes('recipe'))) {
+    ok('capture h1 present: ' + h1.trim().replace(/\s+/g, ' '))
+  } else { fail('h1', h1) }
 
   const urlInput = await page.$('input[type="url"]')
   if (urlInput) { ok('URL input present') } else { fail('URL input', 'missing') }
@@ -146,12 +169,22 @@ try {
   if (!stillDisabled) { ok('submit enabled after URL typed') } else { fail('submit enabled', 'still disabled') }
 
   await page.click('button[type="submit"]')
+  // App navigates to "My Recipes" list view first after adding a recipe
+  await page.waitForFunction(() => {
+    const h = document.querySelector('h1')
+    return h && h.textContent?.includes('My Recipes')
+  }, { timeout: 5000 })
+  ok('navigated to My Recipes after submit')
+
+  // Click the recipe card to open the detail view
+  await page.waitForSelector('.recipe-card__main', { timeout: 3000 })
+  await page.click('.recipe-card__main')
   await page.waitForFunction(() => {
     const h = document.querySelector('h1')
     return h && h.textContent?.includes('Test Pasta')
-  }, { timeout: 5000 })
+  }, { timeout: 3000 })
   const listH1 = await page.textContent('h1')
-  ok('navigated to list: ' + (listH1 && listH1.trim()))
+  ok('opened recipe detail: ' + (listH1 && listH1.trim()))
 } catch (e) { fail('recipe flow', e.message) }
 
 // ── 7. Shopping list content ─────────────────────────────────────────────────
@@ -172,17 +205,27 @@ try {
   const sourceLink = await page.$('.source-link')
   if (sourceLink) { ok('source link present') } else { fail('source link', 'missing') }
 
-  const meta = await page.textContent('.list-meta')
-  if (meta && meta.includes('Kroger') && meta.includes('10001')) {
-    ok('store + zip in meta: ' + meta.trim())
+  // Partner moved store/zip to the sidebar card
+  const storeMeta = await page.textContent('.list-sidebar-store')
+  if (storeMeta && storeMeta.includes('Kroger') && storeMeta.includes('10001')) {
+    ok('store + zip in sidebar: ' + storeMeta.trim())
   } else {
-    fail('store/zip meta', 'got: ' + meta)
+    fail('store/zip sidebar', 'got: ' + storeMeta)
   }
 } catch (e) { fail('list content', e.message) }
 
 // ── 7b. Manual add item ───────────────────────────────────────────────────────
 console.log('\n[7b] Manual add item')
 try {
+  // Partner renamed button to "Send to cart"; click it in the sidebar
+  await page.click('button:has-text("Send to cart")')
+  await page.waitForTimeout(200)
+  // Navigate back to My Recipes, then open cart via the cart button
+  await page.click('button:has-text("Back to recipes")')
+  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('My Recipes'), { timeout: 3000 })
+  await page.click('.cart-header-btn')
+  await page.waitForSelector('.manual-add input', { timeout: 3000 })
+
   const countBefore = (await page.$$('.item-row')).length
   await page.fill('.manual-add input', '1 lb butter')
   await page.click('.manual-add button[type="submit"]')
@@ -241,18 +284,21 @@ try {
   const chips = await page.$$('.chip')
   if (chips.length >= 10) { ok(chips.length + ' quick-add chips') } else { fail('chips', 'got ' + chips.length) }
 
-  const countBefore = (await page.$$('.staple-row')).length
+  // Partner renamed .staple-row → .pantry-staple-row
+  const countBefore = (await page.$$('.pantry-staple-row')).length
   await page.fill('.add-form input', 'butter')
   await page.click('.add-form button[type="submit"]')
   await page.waitForTimeout(300)
-  const countAfter = (await page.$$('.staple-row')).length
+  const countAfter = (await page.$$('.pantry-staple-row')).length
   if (countAfter > countBefore) { ok('staple added') } else { fail('add staple', 'count unchanged') }
 
-  const removeBtn = await page.locator('.staple-row .icon-btn').first()
+  // Partner redesigned remove as a toggle (checkbox) instead of icon-btn
+  // Use evaluate to click — toggle may be under fixed bottom nav
+  const removeBtn = await page.locator('.pantry-staple-row .toggle__input').first()
   if (await removeBtn.count()) {
-    await removeBtn.click()
+    await removeBtn.evaluate(el => el.click())
     await page.waitForTimeout(300)
-    const countAfterRemove = (await page.$$('.staple-row')).length
+    const countAfterRemove = (await page.$$('.pantry-staple-row')).length
     if (countAfterRemove < countAfter) { ok('staple removed') } else { fail('remove staple', 'count unchanged') }
   } else {
     fail('remove button', 'not found')
@@ -263,20 +309,19 @@ try {
 console.log('\n[11] Settings page')
 try {
   await clickNav(3)
-  await page.waitForSelector('.settings-form', { timeout: 3000 })
-  const h1 = await page.textContent('h1')
+  // Partner redesigned to section-card layout (no .settings-form on main view)
+  await page.waitForSelector('.settings-section-card', { timeout: 3000 })
+  const h1 = await page.textContent('.settings-page-title')
   if (h1 && h1.includes('Settings')) { ok('settings h1: ' + h1.trim()) } else { fail('settings h1', h1) }
 
-  const storeSelected = await page.$('.store-btn.selected')
-  if (storeSelected) {
-    const name = await storeSelected.textContent()
-    ok('store selected: ' + name.trim())
-  } else {
-    fail('store selected', 'none highlighted')
-  }
+  // Store name is shown in section row values
+  const rowValues = await page.$$('.settings-section-row__value')
+  const storeText = rowValues.length > 0 ? (await rowValues[0].textContent() ?? '').trim() : ''
+  if (storeText) { ok('store shown: ' + storeText) } else { fail('store shown', 'not found') }
 
-  const zipVal = await page.$eval('#zip', el => el.value)
-  if (zipVal === '10001') { ok('zip persisted: ' + zipVal) } else { fail('zip persisted', 'got: ' + zipVal) }
+  // ZIP is in the second row value
+  const zipText = rowValues.length > 1 ? (await rowValues[1].textContent() ?? '').trim() : ''
+  if (zipText.includes('10001')) { ok('zip shown: ' + zipText) } else { fail('zip shown', 'got: ' + zipText) }
 } catch (e) { fail('settings page', e.message) }
 
 // ── 12. Shopping List nav badge ───────────────────────────────────────────────

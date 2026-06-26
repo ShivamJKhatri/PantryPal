@@ -167,6 +167,7 @@ export default function App() {
             onUpdateCart={updateCartItems}
             onAddRecipeToCart={addRecipeToCart}
             onRemoveRecipeFromCart={removeRecipeFromCart}
+            onGoToSettings={() => navigate('settings')}
           />
         )}
         {page === 'pantry' && (

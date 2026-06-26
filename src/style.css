@@ -1082,6 +1082,184 @@ h1 {
   .list-total-bar { bottom: var(--s-4); }
 }
 
+/* ── Store rank (settings) ───────────────────────────────────────────────── */
+.store-loading {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  padding: var(--s-3) 0;
+}
+
+.store-rank-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.store-rank-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--dur-fast), background var(--dur-fast), box-shadow var(--dur-fast);
+}
+.store-rank-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.store-rank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.store-rank-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: 10px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  width: fit-content;
+}
+.store-rank-name {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.store-rank-dist {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.store-rank-right {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.store-rank-check { display: block; }
+
+.store-rank-note {
+  margin-top: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--text-subtle);
+}
+
+/* ── Store comparison (recipe detail) ───────────────────────────────────── */
+.store-comparison {
+  margin-top: var(--s-4);
+}
+
+.store-comparison__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--s-3);
+}
+.store-comparison__title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.store-comparison__note {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.store-comparison__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--border);
+  margin-bottom: var(--s-3);
+}
+.store-comparison__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface);
+  font-size: var(--fs-xs);
+}
+.store-comparison__row.current {
+  background: var(--accent-soft);
+}
+
+.store-comparison__row-left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+}
+.store-comparison__badge {
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.store-comparison__badge--current {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border: 1px solid var(--border-strong);
+}
+.store-comparison__name { font-weight: 500; }
+.store-comparison__dist { color: var(--text-muted); white-space: nowrap; }
+
+.store-comparison__row-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+.store-comparison__total {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.store-comparison__breakdown {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.store-comparison__tip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.store-comparison__switch {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+}
+.store-comparison__switch:hover { background: var(--accent-soft); }
+
 /* ── Mobile tweaks ───────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
   .main { padding: var(--s-4) var(--s-3); }

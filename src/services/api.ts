@@ -1,4 +1,4 @@
-import type { RecipeShoppingList } from '../types/models.ts'
+import type { RecipeShoppingList, StoreOptionsResponse } from '../types/models.ts'
 import type { UserPrefs } from '../hooks/useUserPrefs.ts'
 
 const API_BASE = '/api'
@@ -40,6 +40,17 @@ export async function extractRecipeFromScreenshot(file: File, prefs?: UserPrefs)
     throw new Error((err as { error?: string }).error ?? `API error ${res.status}`)
   }
   return res.json() as Promise<RecipeShoppingList>
+}
+
+export async function getStoreOptions(zipCode: string, estimatedTotal?: number): Promise<StoreOptionsResponse> {
+  const params = new URLSearchParams({ zipCode })
+  if (estimatedTotal !== undefined) params.set('estimatedTotal', estimatedTotal.toString())
+  const res = await fetch(`${API_BASE}/store-options?${params}`)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }))
+    throw new Error((err as { error?: string }).error ?? `API error ${res.status}`)
+  }
+  return res.json() as Promise<StoreOptionsResponse>
 }
 
 export async function matchIngredientLine(rawText: string): Promise<RecipeShoppingList['items'][number]> {

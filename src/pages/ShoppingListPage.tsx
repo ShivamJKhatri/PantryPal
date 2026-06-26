@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem, SuggestionItem } from '../types/models.ts'
+import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem, SuggestionItem, StoreOption } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
-import { matchIngredientLine } from '../services/api.ts'
+import { matchIngredientLine, getStoreOptions } from '../services/api.ts'
 import { showToast } from '../hooks/useToast.ts'
 import { getItemDisplay } from '../lib/display-item.ts'
 import { calcActiveTotal } from '../lib/merge-items.ts'
@@ -42,6 +42,7 @@ interface Props {
   view: ListView
   onViewChange: (view: ListView) => void
   onBack: () => void
+  onGoToSettings: () => void
 }
 
 function stapleLabels(staples: PantryStaple[]): Set<string> {
@@ -196,11 +197,9 @@ function ItemList({
   }, [shoppingMode])
 
   function updateItems(updater: (prev: RecipeShoppingListItem[]) => RecipeShoppingListItem[]) {
-    setLocalItems((prev) => {
-      const next = updater(prev)
-      onItemsChange(next)
-      return next
-    })
+    const next = updater(localItems)
+    setLocalItems(next)
+    onItemsChange(next)
   }
 
   function toggleExclude(id: string) {
@@ -393,6 +392,79 @@ function ItemList({
   )
 }
 
+function StoreComparison({
+  currentStoreId,
+  zipCode,
+  estimatedTotal,
+  onGoToSettings,
+}: {
+  currentStoreId: string
+  zipCode: string
+  estimatedTotal: number
+  onGoToSettings: () => void
+}) {
+  const [options, setOptions] = useState<StoreOption[] | null>(null)
+  const [gasPrice, setGasPrice] = useState<number | null>(null)
+
+  useEffect(() => {
+    getStoreOptions(zipCode, estimatedTotal)
+      .then((r) => { setOptions(r.stores); setGasPrice(r.gasPrice) })
+      .catch(() => {})
+  }, [zipCode, estimatedTotal])
+
+  if (!options) return null
+
+  const best = options[0]
+  const current = options.find((o) => o.id === currentStoreId)
+  const savings = current ? current.totalWithTravel - best.totalWithTravel : 0
+  const isAlreadyBest = best.id === currentStoreId
+
+  return (
+    <Card padding="sm" className="store-comparison">
+      <div className="store-comparison__header">
+        <span className="store-comparison__title">Best value nearby</span>
+        {gasPrice && <span className="store-comparison__note">${gasPrice.toFixed(2)}/gal est.</span>}
+      </div>
+      <ul className="store-comparison__list">
+        {options.slice(0, 3).map((opt, i) => {
+          const isCurrent = opt.id === currentStoreId
+          return (
+            <li
+              key={opt.id}
+              className={`store-comparison__row${isCurrent ? ' current' : ''}${i === 0 ? ' best' : ''}`}
+            >
+              <div className="store-comparison__row-left">
+                {i === 0 && <span className="store-comparison__badge">Best</span>}
+                {isCurrent && i !== 0 && <span className="store-comparison__badge store-comparison__badge--current">Yours</span>}
+                <span className="store-comparison__name">{opt.name}</span>
+                <span className="store-comparison__dist">{opt.distance} mi</span>
+              </div>
+              <div className="store-comparison__row-right">
+                <span className="store-comparison__total">${opt.totalWithTravel.toFixed(2)}</span>
+                {opt.groceryEstimate !== null && (
+                  <span className="store-comparison__breakdown">
+                    ${opt.groceryEstimate.toFixed(2)} + ${opt.travelCost.toFixed(2)} gas
+                  </span>
+                )}
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+      {isAlreadyBest ? (
+        <p className="store-comparison__tip">You're at the best nearby option!</p>
+      ) : savings > 0.25 ? (
+        <div className="store-comparison__tip">
+          <span>Switch to {best.name} and save ${savings.toFixed(2)} total</span>
+          <button type="button" className="store-comparison__switch press" onClick={onGoToSettings}>
+            Update store →
+          </button>
+        </div>
+      ) : null}
+    </Card>
+  )
+}
+
 function RecipeCard({
   recipe,
   staples,
@@ -462,6 +534,7 @@ export default function ShoppingListPage({
   view,
   onViewChange,
   onBack,
+  onGoToSettings,
 }: Props) {
   const [manual, setManual] = useState('')
   const [adding, setAdding] = useState(false)
@@ -708,6 +781,13 @@ export default function ShoppingListPage({
               </div>
               <p className="list-sidebar-footer">Prices sourced from {storeLabel} · may vary</p>
             </div>
+
+            <StoreComparison
+              currentStoreId={selectedRecipe.storeId}
+              zipCode={selectedRecipe.zipCode}
+              estimatedTotal={selectedRecipe.estimatedTotal}
+              onGoToSettings={onGoToSettings}
+            />
           </div>
         </div>
       </PageShell>

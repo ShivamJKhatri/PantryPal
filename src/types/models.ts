@@ -46,6 +46,21 @@ export type RecipeShoppingList = {
   items: RecipeShoppingListItem[]
 }
 
+export type StoreOption = {
+  id: string
+  name: string
+  distance: number       // estimated miles
+  travelCost: number     // USD round trip
+  groceryEstimate: number | null  // null when no recipe total supplied
+  totalWithTravel: number
+}
+
+export type StoreOptionsResponse = {
+  stores: StoreOption[]
+  gasPrice: number
+  mpg: number
+}
+
 /** Saved recipes + merged cart for the session */
 export type RecipeCollection = {
   recipes: RecipeShoppingList[]
