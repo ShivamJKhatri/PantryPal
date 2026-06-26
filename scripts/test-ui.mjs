@@ -11,6 +11,17 @@ const MOCK_LIST = {
   id: 'list-test-1',
   recipeId: 'recipe-test-1',
   recipeTitle: 'Test Pasta',
+  recipeDescription: 'A classic Italian pasta with rich meat sauce.',
+  recipeServings: '4 servings',
+  recipePrepTime: '10 min',
+  recipeCookTime: '30 min',
+  recipeSteps: [
+    'Boil a large pot of salted water. Cook spaghetti until al dente.',
+    'Brown ground beef in a skillet over medium-high heat. Drain excess fat.',
+    'Add minced garlic and cook 1 minute until fragrant.',
+    'Pour in tomato sauce and simmer 15 minutes.',
+    'Serve sauce over spaghetti and drizzle with olive oil.',
+  ],
   sourceUrl: 'https://example.com/pasta-recipe',
   storeId: 'store-kroger',
   zipCode: '10001',
@@ -213,6 +224,30 @@ try {
     fail('store/zip sidebar', 'got: ' + storeMeta)
   }
 } catch (e) { fail('list content', e.message) }
+
+// ── 7c. Recipe tab ────────────────────────────────────────────────────────────
+console.log('\n[7c] Recipe tab')
+try {
+  // Go back to recipe detail
+  await page.click('button:has-text("Back to recipes")')
+  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('My Recipes'), { timeout: 3000 })
+  await page.click('.recipe-card__main')
+  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('Test Pasta'), { timeout: 3000 })
+
+  // Click Recipe tab
+  await page.click('.detail-tabs__btn[aria-selected="false"]')
+  await page.waitForSelector('.recipe-steps', { timeout: 3000 })
+  const steps = await page.$$('.recipe-step')
+  if (steps.length > 0) { ok(steps.length + ' recipe steps shown') } else { fail('recipe steps', 'none found') }
+
+  const metaChips = await page.$$('.recipe-meta-chip')
+  if (metaChips.length > 0) { ok(metaChips.length + ' meta chips (serves/time)') } else { fail('meta chips', 'none') }
+
+  // Switch back to list tab
+  await page.click('.detail-tabs__btn[aria-selected="false"]')
+  await page.waitForSelector('.item-row', { timeout: 3000 })
+  ok('switched back to list tab')
+} catch (e) { fail('recipe tab', e.message) }
 
 // ── 7b. Manual add item ───────────────────────────────────────────────────────
 console.log('\n[7b] Manual add item')

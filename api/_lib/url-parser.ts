@@ -8,9 +8,26 @@ import type { ExtractedRecipe } from './vision/types.js'
 type SchemaRecipe = {
   '@type': string | string[]
   name?: string
+  description?: string
+  recipeYield?: string | string[] | number
+  prepTime?: string
+  cookTime?: string
+  totalTime?: string
   recipeIngredient?: string[]
   recipeInstructions?: SchemaInstruction[] | string[]
   '@graph'?: SchemaRecipe[]
+}
+
+function parseDuration(iso?: string): string | undefined {
+  if (!iso) return undefined
+  const m = iso.match(/PT?(?:(\d+)H)?(?:(\d+)M)?/)
+  if (!m) return undefined
+  const h = parseInt(m[1] ?? '0')
+  const min = parseInt(m[2] ?? '0')
+  if (h === 0 && min === 0) return undefined
+  if (h === 0) return `${min} min`
+  if (min === 0) return `${h} hr`
+  return `${h} hr ${min} min`
 }
 
 type SchemaInstruction =
@@ -39,8 +56,17 @@ function parseSchemaRecipe(data: SchemaRecipe): ExtractedRecipe | null {
     }
   }
 
+  const rawYield = data.recipeYield
+  const servings = rawYield
+    ? (Array.isArray(rawYield) ? rawYield[0] : rawYield).toString()
+    : undefined
+
   return {
     title: data.name ?? 'Unknown Recipe',
+    description: data.description?.trim() || undefined,
+    servings,
+    prepTime: parseDuration(data.prepTime),
+    cookTime: parseDuration(data.cookTime ?? data.totalTime),
     ingredients: ingredients.map((rawText, i) => ({
       rawText,
       sortOrder: i,
@@ -100,12 +126,16 @@ function parseModelJson(text: string): ExtractedRecipe {
     ? trimmed.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
     : trimmed
 
-  const parsed = JSON.parse(jsonText) as Partial<ExtractedRecipe>
+  const parsed = JSON.parse(jsonText) as Partial<ExtractedRecipe> & { description?: string | null; servings?: string | null; prepTime?: string | null; cookTime?: string | null }
   if (!parsed.title || !Array.isArray(parsed.ingredients)) {
     throw new Error('Model response missing title or ingredients')
   }
   return {
     title: parsed.title,
+    description: parsed.description ?? undefined,
+    servings: parsed.servings ?? undefined,
+    prepTime: parsed.prepTime ?? undefined,
+    cookTime: parsed.cookTime ?? undefined,
     ingredients: parsed.ingredients.map((item, i) => ({
       rawText: item.rawText ?? '',
       sortOrder: item.sortOrder ?? i,

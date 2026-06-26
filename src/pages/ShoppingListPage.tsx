@@ -467,6 +467,209 @@ function StoreComparison({
   )
 }
 
+function RecipeDetailView({
+  recipe,
+  staples,
+  inCart,
+  onNewRecipe,
+  onUpdateRecipe,
+  onAddToPantry,
+  onAddToCart,
+  onRemoveFromCart,
+  onBack,
+  onGoToSettings,
+}: {
+  recipe: RecipeShoppingList
+  staples: PantryStaple[]
+  inCart: boolean
+  onNewRecipe: () => void
+  onUpdateRecipe: (items: RecipeShoppingListItem[]) => void
+  onAddToPantry: (label: string) => void
+  onAddToCart: () => void
+  onRemoveFromCart: () => void
+  onBack: () => void
+  onGoToSettings: () => void
+}) {
+  const [tab, setTab] = useState<'list' | 'recipe'>('list')
+  const hasRecipeContent = (recipe.recipeSteps && recipe.recipeSteps.length > 0) ||
+    recipe.recipeDescription || recipe.recipeServings ||
+    recipe.recipePrepTime || recipe.recipeCookTime
+
+  const allItems = applyPantryExclusions(recipe.items, staples)
+  const activeItems = allItems.filter((i) => !i.excluded && !i.notFound)
+  const pantryExcluded = allItems.filter((i) => i.excluded)
+  const totalBuy = calcActiveTotal(allItems)
+  const totalSaved = recipe.items.reduce((s, i) => s + i.price, 0) - totalBuy
+  const storeLabel = storeDisplayName(recipe.storeId)
+
+  return (
+    <PageShell>
+      <div className="list-detail-layout">
+        {/* Left: main content */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s-4)', marginBottom: 'var(--s-4)' }}>
+            <div>
+              <h1 className="list-detail-title">{recipe.recipeTitle}</h1>
+              <div className="list-meta">
+                {tab === 'list' && <span>{activeItems.length} items</span>}
+                {recipe.sourceUrl && (
+                  <>
+                    {tab === 'list' && <span className="list-meta__sep" aria-hidden>·</span>}
+                    <a className="source-link" href={recipe.sourceUrl} target="_blank" rel="noreferrer">
+                      View source <IconExternal size={14} />
+                    </a>
+                  </>
+                )}
+              </div>
+            </div>
+            <button type="button" className="list-detail-new-recipe" onClick={onNewRecipe}>
+              + New recipe
+            </button>
+          </div>
+
+          {hasRecipeContent && (
+            <div className="detail-tabs" data-tab={tab}>
+              <div className="detail-tabs__indicator" />
+              <button
+                type="button"
+                className="detail-tabs__btn"
+                aria-selected={tab === 'list'}
+                onClick={() => setTab('list')}
+              >
+                Shopping list
+              </button>
+              <button
+                type="button"
+                className="detail-tabs__btn"
+                aria-selected={tab === 'recipe'}
+                onClick={() => setTab('recipe')}
+              >
+                Recipe
+              </button>
+            </div>
+          )}
+
+          {tab === 'list' ? (
+            <>
+              {pantryExcluded.length > 0 && (
+                <div className="pantry-savings-banner">
+                  <div className="pantry-savings-banner__icon"><IconCheck size={14} /></div>
+                  <div className="pantry-savings-banner__body">
+                    <div className="pantry-savings-banner__title">Pantry savings</div>
+                    <div className="pantry-savings-banner__sub">
+                      {pantryExcluded.map((i) => getItemDisplay(i).name).slice(0, 3).join(', ')}
+                      {pantryExcluded.length > 3 ? ` +${pantryExcluded.length - 3} more` : ''} already on hand
+                    </div>
+                  </div>
+                  {totalSaved > 0 && (
+                    <span className="pantry-savings-banner__amount">-${totalSaved.toFixed(2)}</span>
+                  )}
+                </div>
+              )}
+              <ItemList
+                items={recipe.items}
+                staples={staples}
+                onItemsChange={onUpdateRecipe}
+                onAddToPantry={onAddToPantry}
+              />
+            </>
+          ) : (
+            <div className="recipe-view">
+              {(recipe.recipeServings || recipe.recipePrepTime || recipe.recipeCookTime) && (
+                <div className="recipe-meta-bar">
+                  {recipe.recipeServings && (
+                    <div className="recipe-meta-chip">
+                      <span className="recipe-meta-chip__label">Serves</span>
+                      <span className="recipe-meta-chip__value">{recipe.recipeServings}</span>
+                    </div>
+                  )}
+                  {recipe.recipePrepTime && (
+                    <div className="recipe-meta-chip">
+                      <span className="recipe-meta-chip__label">Prep</span>
+                      <span className="recipe-meta-chip__value">{recipe.recipePrepTime}</span>
+                    </div>
+                  )}
+                  {recipe.recipeCookTime && (
+                    <div className="recipe-meta-chip">
+                      <span className="recipe-meta-chip__label">Cook</span>
+                      <span className="recipe-meta-chip__value">{recipe.recipeCookTime}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {recipe.recipeDescription && (
+                <p className="recipe-description">{recipe.recipeDescription}</p>
+              )}
+              {recipe.recipeSteps && recipe.recipeSteps.length > 0 ? (
+                <ol className="recipe-steps">
+                  {recipe.recipeSteps.map((step, i) => (
+                    <li key={i} className="recipe-step">
+                      <span className="recipe-step__num">{i + 1}</span>
+                      <p className="recipe-step__text">{step}</p>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="recipe-no-steps">No instructions were found for this recipe.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: cart sidebar */}
+        <div className="list-sidebar">
+          <div className="list-sidebar-card">
+            <div className="list-sidebar-title">Your cart</div>
+            <div className="list-sidebar-store">
+              <span className="list-sidebar-store-dot" />
+              {storeLabel} · {recipe.zipCode}
+            </div>
+            <div className="list-sidebar-rows">
+              <div className="list-sidebar-row">
+                <span>{activeItems.length} items to buy</span>
+                <span>${totalBuy.toFixed(2)}</span>
+              </div>
+              {pantryExcluded.length > 0 && totalSaved > 0 && (
+                <div className="list-sidebar-row">
+                  <span>Pantry staples</span>
+                  <span style={{ color: 'var(--success)' }}>-${totalSaved.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+            <div className="list-sidebar-total">
+              <span className="list-sidebar-total__label">Estimated total</span>
+              <span className="list-sidebar-total__amount">$<CountUp value={totalBuy} /></span>
+              <span className="list-sidebar-total__note">Prices are estimates · updates as you edit</span>
+            </div>
+            <div className="list-sidebar-actions">
+              {inCart ? (
+                <Button variant="secondary" fullWidth onClick={onRemoveFromCart}>
+                  Remove from cart
+                </Button>
+              ) : (
+                <Button fullWidth onClick={onAddToCart}>
+                  Send to cart
+                </Button>
+              )}
+              <Button variant="secondary" fullWidth onClick={onBack}>
+                Back to recipes
+              </Button>
+            </div>
+            <p className="list-sidebar-footer">Prices sourced from {storeLabel} · may vary</p>
+          </div>
+
+          <StoreComparison
+            currentStoreId={recipe.storeId}
+            zipCode={recipe.zipCode}
+            estimatedTotal={recipe.estimatedTotal}
+            onGoToSettings={onGoToSettings}
+          />
+        </div>
+      </div>
+    </PageShell>
+  )
+}
+
 function RecipeCard({
   recipe,
   staples,
@@ -669,130 +872,19 @@ export default function ShoppingListPage({
   }
 
   if (view.kind === 'detail' && selectedRecipe) {
-    const inCart = cartRecipeIds.includes(selectedRecipe.id)
-    const allItems = applyPantryExclusions(selectedRecipe.items, staples)
-    const activeItems = allItems.filter((i) => !i.excluded && !i.notFound)
-    const pantryExcluded = allItems.filter((i) => i.excluded)
-    const totalBuy = calcActiveTotal(allItems)
-    const totalSaved = selectedRecipe.items.reduce((s, i) => s + i.price, 0) - totalBuy
-    const storeLabel = storeDisplayName(selectedRecipe.storeId)
-
     return (
-      <PageShell>
-        <div className="list-detail-layout">
-          {/* Left: main content */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 'var(--s-4)', marginBottom: 'var(--s-5)' }}>
-              <div>
-                <span className="list-detail-label">Your shopping list</span>
-                <h1 className="list-detail-title">{selectedRecipe.recipeTitle}</h1>
-                <div className="list-meta">
-                  <span>{activeItems.length} items</span>
-                  {selectedRecipe.sourceUrl && (
-                    <>
-                      <span className="list-meta__sep" aria-hidden>·</span>
-                      <a className="source-link" href={selectedRecipe.sourceUrl} target="_blank" rel="noreferrer">
-                        View recipe <IconExternal size={14} />
-                      </a>
-                    </>
-                  )}
-                </div>
-              </div>
-              <button type="button" className="list-detail-new-recipe" onClick={onNewRecipe}>
-                + New recipe
-              </button>
-            </div>
-
-            {pantryExcluded.length > 0 && (
-              <div className="pantry-savings-banner">
-                <div className="pantry-savings-banner__icon">
-                  <IconCheck size={14} />
-                </div>
-                <div className="pantry-savings-banner__body">
-                  <div className="pantry-savings-banner__title">Pantry savings</div>
-                  <div className="pantry-savings-banner__sub">
-                    {pantryExcluded.map((i) => getItemDisplay(i).name).slice(0, 3).join(', ')}
-                    {pantryExcluded.length > 3 ? ` +${pantryExcluded.length - 3} more` : ''} already on hand
-                  </div>
-                </div>
-                {totalSaved > 0 && (
-                  <span className="pantry-savings-banner__amount">-${totalSaved.toFixed(2)}</span>
-                )}
-              </div>
-            )}
-
-            <ItemList
-              items={selectedRecipe.items}
-              staples={staples}
-              onItemsChange={(items) => onUpdateRecipe(selectedRecipe.id, items)}
-              onAddToPantry={onAddToPantry}
-            />
-          </div>
-
-          {/* Right: cart sidebar */}
-          <div className="list-sidebar">
-            <div className="list-sidebar-card">
-              <div className="list-sidebar-title">Your cart</div>
-              <div className="list-sidebar-store">
-                <span className="list-sidebar-store-dot" />
-                {storeLabel} · {selectedRecipe.zipCode}
-              </div>
-              <div className="list-sidebar-rows">
-                <div className="list-sidebar-row">
-                  <span>{activeItems.length} items to buy</span>
-                  <span>${totalBuy.toFixed(2)}</span>
-                </div>
-                {pantryExcluded.length > 0 && totalSaved > 0 && (
-                  <div className="list-sidebar-row">
-                    <span>Pantry staples</span>
-                    <span style={{ color: 'var(--success)' }}>-${totalSaved.toFixed(2)}</span>
-                  </div>
-                )}
-              </div>
-              <div className="list-sidebar-total">
-                <span className="list-sidebar-total__label">Estimated total</span>
-                <span className="list-sidebar-total__amount">$<CountUp value={totalBuy} /></span>
-                <span className="list-sidebar-total__note">Prices are estimates · updates as you edit</span>
-              </div>
-              <div className="list-sidebar-actions">
-                {inCart ? (
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => {
-                      onRemoveRecipeFromCart(selectedRecipe.id)
-                      showToast('Removed from cart', 'default')
-                    }}
-                  >
-                    Remove from cart
-                  </Button>
-                ) : (
-                  <Button
-                    fullWidth
-                    onClick={() => {
-                      onAddRecipeToCart(selectedRecipe.id)
-                      showToast('Added to cart', 'success')
-                    }}
-                  >
-                    Send to cart
-                  </Button>
-                )}
-                <Button variant="secondary" fullWidth onClick={onBack}>
-                  Back to recipes
-                </Button>
-              </div>
-              <p className="list-sidebar-footer">Prices sourced from {storeLabel} · may vary</p>
-            </div>
-
-            <StoreComparison
-              currentStoreId={selectedRecipe.storeId}
-              zipCode={selectedRecipe.zipCode}
-              estimatedTotal={selectedRecipe.estimatedTotal}
-              onGoToSettings={onGoToSettings}
-            />
-          </div>
-        </div>
-      </PageShell>
+      <RecipeDetailView
+        recipe={selectedRecipe}
+        staples={staples}
+        inCart={cartRecipeIds.includes(selectedRecipe.id)}
+        onNewRecipe={onNewRecipe}
+        onUpdateRecipe={(items) => onUpdateRecipe(selectedRecipe.id, items)}
+        onAddToPantry={onAddToPantry}
+        onAddToCart={() => { onAddRecipeToCart(selectedRecipe.id); showToast('Added to cart', 'success') }}
+        onRemoveFromCart={() => { onRemoveRecipeFromCart(selectedRecipe.id); showToast('Removed from cart', 'default') }}
+        onBack={onBack}
+        onGoToSettings={onGoToSettings}
+      />
     )
   }
 

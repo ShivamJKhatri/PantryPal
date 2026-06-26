@@ -37,6 +37,11 @@ export type RecipeShoppingList = {
   id: string
   recipeId: string
   recipeTitle: string
+  recipeDescription?: string
+  recipeServings?: string
+  recipePrepTime?: string
+  recipeCookTime?: string
+  recipeSteps?: string[]
   sourceUrl?: string
   storeId: string
   zipCode: string
