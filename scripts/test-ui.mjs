@@ -216,25 +216,26 @@ try {
   const sourceLink = await page.$('.source-link')
   if (sourceLink) { ok('source link present') } else { fail('source link', 'missing') }
 
-  // Partner moved store/zip to the sidebar card
-  const storeMeta = await page.textContent('.list-sidebar-store')
-  if (storeMeta && storeMeta.includes('Kroger') && storeMeta.includes('10001')) {
-    ok('store + zip in sidebar: ' + storeMeta.trim())
-  } else {
-    fail('store/zip sidebar', 'got: ' + storeMeta)
-  }
+  // Store picker shows all stores for this recipe
+  await page.waitForSelector('.store-picker-row', { timeout: 5000 })
+  const storeRows = await page.$$('.store-picker-row')
+  if (storeRows.length === 6) { ok('store picker shows all 6 stores') } else { fail('store picker', 'got ' + storeRows.length + ' rows') }
+
+  // Best value badge present
+  const bestBadge = await page.$('.store-picker-badge')
+  if (bestBadge) { ok('best value badge shown') } else { fail('best badge', 'missing') }
+
+  // Selected store name shows in sidebar title
+  const sidebarTitle = await page.textContent('.list-sidebar-title')
+  if (sidebarTitle && sidebarTitle.trim().length > 0 && sidebarTitle.trim() !== 'Your cart') {
+    ok('sidebar reflects selected store: ' + sidebarTitle.trim())
+  } else { fail('sidebar store name', 'got: ' + sidebarTitle) }
 } catch (e) { fail('list content', e.message) }
 
 // ── 7c. Recipe tab ────────────────────────────────────────────────────────────
 console.log('\n[7c] Recipe tab')
 try {
-  // Go back to recipe detail
-  await page.click('button:has-text("Back to recipes")')
-  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('My Recipes'), { timeout: 3000 })
-  await page.click('.recipe-card__main')
-  await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('Test Pasta'), { timeout: 3000 })
-
-  // Click Recipe tab
+  // Already in recipe detail — click Recipe tab (aria-selected="false" = inactive tab)
   await page.click('.detail-tabs__btn[aria-selected="false"]')
   await page.waitForSelector('.recipe-steps', { timeout: 3000 })
   const steps = await page.$$('.recipe-step')
@@ -252,11 +253,10 @@ try {
 // ── 7b. Manual add item ───────────────────────────────────────────────────────
 console.log('\n[7b] Manual add item')
 try {
-  // Partner renamed button to "Send to cart"; click it in the sidebar
-  await page.click('button:has-text("Send to cart")')
+  // Sidebar buttons may be off-screen on mobile — use JS click
+  await page.locator('button:has-text("Send to cart")').evaluate(el => el.click())
   await page.waitForTimeout(200)
-  // Navigate back to My Recipes, then open cart via the cart button
-  await page.click('button:has-text("Back to recipes")')
+  await page.locator('button:has-text("Back to recipes")').evaluate(el => el.click())
   await page.waitForFunction(() => document.querySelector('h1')?.textContent?.includes('My Recipes'), { timeout: 3000 })
   await page.click('.cart-header-btn')
   await page.waitForSelector('.manual-add input', { timeout: 3000 })

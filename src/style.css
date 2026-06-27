@@ -1259,6 +1259,162 @@ h1 {
   border-color: var(--accent);
 }
 
+/* ── Store picker (recipe detail — per-recipe store comparison) ──────────── */
+.store-picker-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  margin-bottom: var(--s-4);
+  box-shadow: var(--shadow-card);
+}
+.store-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.store-picker-title {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.store-picker-meta {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.store-picker-set-zip {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.store-picker-no-zip {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  padding: var(--s-4);
+  text-align: center;
+}
+.store-picker-loading {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.store-picker-skeleton {
+  height: 56px;
+  background: var(--surface-2);
+  position: relative;
+  overflow: hidden;
+}
+.store-picker-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  animation: shimmer-sweep 1.2s ease-in-out infinite;
+}
+.store-picker-list {
+  list-style: none;
+}
+.store-picker-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border: none;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: background 100ms;
+}
+.store-picker-list li:first-child .store-picker-row { border-top: none; }
+.store-picker-row:hover { background: var(--bg-elevated); }
+.store-picker-row.selected { background: var(--accent-soft); }
+.store-picker-row__left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 0;
+  flex: 1;
+}
+.store-picker-row__radio {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border-strong);
+  display: grid;
+  place-items: center;
+  transition: border-color var(--dur-fast);
+}
+.store-picker-row.selected .store-picker-row__radio {
+  border-color: var(--accent);
+}
+.store-picker-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: transparent;
+  transition: background var(--dur-fast);
+}
+.store-picker-dot.filled { background: var(--accent); }
+.store-picker-row__info { min-width: 0; flex: 1; }
+.store-picker-row__name {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text);
+}
+.store-picker-badge {
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  color: var(--text-inverse);
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.store-picker-row__sub {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.store-picker-row__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  gap: 1px;
+}
+.store-picker-row__total {
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.store-picker-row__breakdown {
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.store-picker-row__extra {
+  font-size: 10px;
+  color: var(--danger, #ef4444);
+}
+
 /* ── Store comparison (recipe detail) ───────────────────────────────────── */
 .store-comparison {
   margin-top: var(--s-4);

@@ -392,86 +392,6 @@ function ItemList({
   )
 }
 
-function StoreComparison({
-  currentStoreId,
-  zipCode,
-  estimatedTotal,
-  onGoToSettings,
-}: {
-  currentStoreId: string
-  zipCode: string
-  estimatedTotal: number
-  onGoToSettings: () => void
-}) {
-  const [options, setOptions] = useState<StoreOption[] | null>(null)
-  const [gasPrice, setGasPrice] = useState<number | null>(null)
-  // Round to nearest $0.50 so minor qty changes don't trigger a refetch
-  const stableTotal = Math.round(estimatedTotal * 2) / 2
-
-  useEffect(() => {
-    getStoreOptions(zipCode, stableTotal)
-      .then((r) => { setOptions(r.stores); setGasPrice(r.gasPrice) })
-      .catch(() => {})
-  }, [zipCode, stableTotal])
-
-  if (!options) return null
-
-  const best = options[0]
-  const current = options.find((o) => o.id === currentStoreId)
-  const savings = current ? current.totalWithTravel - best.totalWithTravel : 0
-  const isAlreadyBest = best.id === currentStoreId
-
-  return (
-    <Card padding="sm" className="store-comparison">
-      <div className="store-comparison__header">
-        <span className="store-comparison__title">All nearby stores</span>
-        {gasPrice && <span className="store-comparison__note">${gasPrice.toFixed(2)}/gal · 28 mpg</span>}
-      </div>
-      <ul className="store-comparison__list">
-        {options.map((opt, i) => {
-          const isCurrent = opt.id === currentStoreId
-          return (
-            <li
-              key={opt.id}
-              className={`store-comparison__row${isCurrent ? ' current' : ''}${i === 0 ? ' best' : ''}`}
-            >
-              <div className="store-comparison__row-left">
-                <div className="store-comparison__row-badges">
-                  {i === 0 && <span className="store-comparison__badge">Best</span>}
-                  {isCurrent && <span className="store-comparison__badge store-comparison__badge--current">Yours</span>}
-                </div>
-                <span className="store-comparison__name">{opt.name}</span>
-                <span className="store-comparison__dist">{opt.distance} mi · ${opt.travelCost.toFixed(2)} gas</span>
-              </div>
-              <div className="store-comparison__row-right">
-                <span className="store-comparison__total">
-                  {opt.groceryEstimate !== null ? `$${opt.totalWithTravel.toFixed(2)}` : `+$${opt.travelCost.toFixed(2)}`}
-                </span>
-                {opt.groceryEstimate !== null && (
-                  <span className="store-comparison__breakdown">
-                    ${opt.groceryEstimate.toFixed(2)} groceries + ${opt.travelCost.toFixed(2)} gas
-                  </span>
-                )}
-                {!isCurrent && (
-                  <button type="button" className="store-comparison__switch press" onClick={onGoToSettings}>
-                    Switch →
-                  </button>
-                )}
-              </div>
-            </li>
-          )
-        })}
-      </ul>
-      {isAlreadyBest ? (
-        <p className="store-comparison__tip store-comparison__tip--good">You're already at the best nearby option</p>
-      ) : savings > 0.25 ? (
-        <p className="store-comparison__tip">
-          Switch to {best.name} to save <strong>${savings.toFixed(2)}</strong> on this recipe
-        </p>
-      ) : null}
-    </Card>
-  )
-}
 
 function RecipeDetailView({
   recipe,
@@ -497,6 +417,27 @@ function RecipeDetailView({
   onGoToSettings: () => void
 }) {
   const [tab, setTab] = useState<'list' | 'recipe'>('list')
+  const [stores, setStores] = useState<StoreOption[] | null>(null)
+  const [gasPrice, setGasPrice] = useState<number | null>(null)
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null)
+
+  const stableTotal = Math.round(calcActiveTotal(applyPantryExclusions(recipe.items, staples)) * 2) / 2
+
+  useEffect(() => {
+    if (!recipe.zipCode) return
+    getStoreOptions(recipe.zipCode, stableTotal)
+      .then((r) => {
+        setStores(r.stores)
+        setGasPrice(r.gasPrice)
+        // default to cheapest (first in sorted list)
+        setSelectedStoreId(r.stores[0]?.id ?? null)
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipe.zipCode])
+
+  const selectedStore = stores?.find((s) => s.id === selectedStoreId) ?? stores?.[0] ?? null
+
   const hasRecipeContent = (recipe.recipeSteps && recipe.recipeSteps.length > 0) ||
     recipe.recipeDescription || recipe.recipeServings ||
     recipe.recipePrepTime || recipe.recipeCookTime
@@ -504,9 +445,13 @@ function RecipeDetailView({
   const allItems = applyPantryExclusions(recipe.items, staples)
   const activeItems = allItems.filter((i) => !i.excluded && !i.notFound)
   const pantryExcluded = allItems.filter((i) => i.excluded)
-  const totalBuy = calcActiveTotal(allItems)
-  const totalSaved = recipe.items.reduce((s, i) => s + i.price, 0) - totalBuy
-  const storeLabel = storeDisplayName(recipe.storeId)
+  const baseTotal = calcActiveTotal(allItems)
+  const totalSaved = recipe.items.reduce((s, i) => s + i.price, 0) - baseTotal
+
+  // Grocery total at selected store (from API) or base total
+  const groceryTotal = selectedStore?.groceryEstimate ?? baseTotal
+  const travelCost = selectedStore?.travelCost ?? 0
+  const grandTotal = groceryTotal + travelCost
 
   return (
     <PageShell>
@@ -517,10 +462,10 @@ function RecipeDetailView({
             <div>
               <h1 className="list-detail-title">{recipe.recipeTitle}</h1>
               <div className="list-meta">
-                {tab === 'list' && <span>{activeItems.length} items</span>}
+                <span>{activeItems.length} items</span>
                 {recipe.sourceUrl && (
                   <>
-                    {tab === 'list' && <span className="list-meta__sep" aria-hidden>·</span>}
+                    <span className="list-meta__sep" aria-hidden>·</span>
                     <a className="source-link" href={recipe.sourceUrl} target="_blank" rel="noreferrer">
                       View source <IconExternal size={14} />
                     </a>
@@ -533,23 +478,91 @@ function RecipeDetailView({
             </button>
           </div>
 
+          {/* Store picker — full comparison for this recipe */}
+          <div className="store-picker-card">
+            <div className="store-picker-header">
+              <span className="store-picker-title">Pick a store for this recipe</span>
+              {gasPrice !== null && recipe.zipCode && (
+                <span className="store-picker-meta">
+                  near {recipe.zipCode} · ${gasPrice.toFixed(2)}/gal
+                </span>
+              )}
+              {!recipe.zipCode && (
+                <button type="button" className="store-picker-set-zip press" onClick={onGoToSettings}>
+                  Set ZIP →
+                </button>
+              )}
+            </div>
+
+            {!recipe.zipCode ? (
+              <p className="store-picker-no-zip">Add a ZIP code in Settings to compare store prices and distances.</p>
+            ) : stores === null ? (
+              <div className="store-picker-loading">
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="store-picker-skeleton" />
+                ))}
+              </div>
+            ) : (
+              <ul className="store-picker-list">
+                {stores.map((store, i) => {
+                  const isSelected = store.id === selectedStoreId
+                  const isBest = i === 0
+                  const storeCheapest = store.groceryEstimate !== null
+                    ? store.groceryEstimate + store.travelCost
+                    : null
+                  const savings = stores[0].totalWithTravel - store.totalWithTravel
+
+                  return (
+                    <li key={store.id}>
+                      <button
+                        type="button"
+                        className={`store-picker-row press${isSelected ? ' selected' : ''}`}
+                        onClick={() => setSelectedStoreId(store.id)}
+                      >
+                        <div className="store-picker-row__left">
+                          <div className="store-picker-row__radio">
+                            <div className={`store-picker-dot${isSelected ? ' filled' : ''}`} />
+                          </div>
+                          <div className="store-picker-row__info">
+                            <div className="store-picker-row__name">
+                              {store.name}
+                              {isBest && <span className="store-picker-badge">Best value</span>}
+                            </div>
+                            <div className="store-picker-row__sub">
+                              {store.distance} mi away · ${store.travelCost.toFixed(2)} gas (round trip)
+                            </div>
+                          </div>
+                        </div>
+                        <div className="store-picker-row__right">
+                          {storeCheapest !== null ? (
+                            <>
+                              <span className="store-picker-row__total">${storeCheapest.toFixed(2)}</span>
+                              <span className="store-picker-row__breakdown">
+                                ${store.groceryEstimate!.toFixed(2)} groceries + ${store.travelCost.toFixed(2)} gas
+                              </span>
+                              {!isBest && savings > 0.01 && (
+                                <span className="store-picker-row__extra">+${savings.toFixed(2)} vs best</span>
+                              )}
+                            </>
+                          ) : (
+                            <span className="store-picker-row__total">${store.travelCost.toFixed(2)} gas</span>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+
           {hasRecipeContent && (
             <div className="detail-tabs" data-tab={tab}>
               <div className="detail-tabs__indicator" />
-              <button
-                type="button"
-                className="detail-tabs__btn"
-                aria-selected={tab === 'list'}
-                onClick={() => setTab('list')}
-              >
+              <button type="button" className="detail-tabs__btn" aria-selected={tab === 'list'} onClick={() => setTab('list')}>
                 Shopping list
               </button>
-              <button
-                type="button"
-                className="detail-tabs__btn"
-                aria-selected={tab === 'recipe'}
-                onClick={() => setTab('recipe')}
-              >
+              <button type="button" className="detail-tabs__btn" aria-selected={tab === 'recipe'} onClick={() => setTab('recipe')}>
                 Recipe
               </button>
             </div>
@@ -567,9 +580,7 @@ function RecipeDetailView({
                       {pantryExcluded.length > 3 ? ` +${pantryExcluded.length - 3} more` : ''} already on hand
                     </div>
                   </div>
-                  {totalSaved > 0 && (
-                    <span className="pantry-savings-banner__amount">-${totalSaved.toFixed(2)}</span>
-                  )}
+                  {totalSaved > 0 && <span className="pantry-savings-banner__amount">-${totalSaved.toFixed(2)}</span>}
                 </div>
               )}
               <ItemList
@@ -622,54 +633,50 @@ function RecipeDetailView({
           )}
         </div>
 
-        {/* Right: cart sidebar */}
+        {/* Right: cart sidebar — reflects selected store */}
         <div className="list-sidebar">
           <div className="list-sidebar-card">
-            <div className="list-sidebar-title">Your cart</div>
-            <div className="list-sidebar-store">
-              <span className="list-sidebar-store-dot" />
-              {storeLabel} · {recipe.zipCode}
+            <div className="list-sidebar-title">
+              {selectedStore ? selectedStore.name : 'Your cart'}
             </div>
+            {selectedStore && (
+              <div className="list-sidebar-store">
+                <span className="list-sidebar-store-dot" />
+                {selectedStore.distance} mi · ${selectedStore.travelCost.toFixed(2)} gas
+              </div>
+            )}
             <div className="list-sidebar-rows">
               <div className="list-sidebar-row">
-                <span>{activeItems.length} items to buy</span>
-                <span>${totalBuy.toFixed(2)}</span>
+                <span>{activeItems.length} items</span>
+                <span>{selectedStore?.groceryEstimate !== null && selectedStore ? `$${selectedStore.groceryEstimate!.toFixed(2)}` : `$${baseTotal.toFixed(2)}`}</span>
               </div>
+              {selectedStore && (
+                <div className="list-sidebar-row">
+                  <span>Gas (round trip)</span>
+                  <span>+${selectedStore.travelCost.toFixed(2)}</span>
+                </div>
+              )}
               {pantryExcluded.length > 0 && totalSaved > 0 && (
                 <div className="list-sidebar-row">
-                  <span>Pantry staples</span>
+                  <span>Pantry savings</span>
                   <span style={{ color: 'var(--success)' }}>-${totalSaved.toFixed(2)}</span>
                 </div>
               )}
             </div>
             <div className="list-sidebar-total">
-              <span className="list-sidebar-total__label">Estimated total</span>
-              <span className="list-sidebar-total__amount">$<CountUp value={totalBuy} /></span>
-              <span className="list-sidebar-total__note">Prices are estimates · updates as you edit</span>
+              <span className="list-sidebar-total__label">Total with gas</span>
+              <span className="list-sidebar-total__amount">$<CountUp value={grandTotal} /></span>
+              <span className="list-sidebar-total__note">Groceries + round-trip gas · estimates only</span>
             </div>
             <div className="list-sidebar-actions">
               {inCart ? (
-                <Button variant="secondary" fullWidth onClick={onRemoveFromCart}>
-                  Remove from cart
-                </Button>
+                <Button variant="secondary" fullWidth onClick={onRemoveFromCart}>Remove from cart</Button>
               ) : (
-                <Button fullWidth onClick={onAddToCart}>
-                  Send to cart
-                </Button>
+                <Button fullWidth onClick={onAddToCart}>Send to cart</Button>
               )}
-              <Button variant="secondary" fullWidth onClick={onBack}>
-                Back to recipes
-              </Button>
+              <Button variant="secondary" fullWidth onClick={onBack}>Back to recipes</Button>
             </div>
-            <p className="list-sidebar-footer">Prices sourced from {storeLabel} · may vary</p>
           </div>
-
-          <StoreComparison
-            currentStoreId={recipe.storeId}
-            zipCode={recipe.zipCode}
-            estimatedTotal={recipe.estimatedTotal}
-            onGoToSettings={onGoToSettings}
-          />
         </div>
       </div>
     </PageShell>
