@@ -179,8 +179,12 @@ export default function App() {
             isOnboarding={isOnboarding}
             onSave={(next) => {
               setPrefs(next)
-              showToast(isOnboarding ? 'You\'re all set!' : 'Settings saved', 'success')
-              navigate('capture')
+              if (isOnboarding) {
+                showToast('You\'re all set!', 'success')
+                navigate('capture')
+              } else {
+                showToast('Settings saved', 'success')
+              }
             }}
           />
         )}

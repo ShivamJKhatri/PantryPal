@@ -92,7 +92,7 @@ export default function CapturePage({ prefs, onListReady, onGoToSettings }: Prop
           className={`store-chip${hasPrefs ? '' : ' store-chip--warn'}`}
           onClick={onGoToSettings}
         >
-          {hasPrefs ? `Shopping at ${prefs.storeName} · ${prefs.zipCode}` : 'Set store for estimates'}
+          {hasPrefs ? `Pricing for ${prefs.storeName} · ${prefs.zipCode}` : 'Tap to set your store'}
           <span aria-hidden> ›</span>
         </button>
 

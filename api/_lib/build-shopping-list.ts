@@ -4,8 +4,8 @@ import { itemFromIngredient } from './item-from-ingredient.js'
 import { getDb } from './db.js'
 import { recipes, recipeIngredients } from './schema.js'
 
-const DEFAULT_STORE_ID = 'store-kroger'
-const DEFAULT_ZIP = '43210'
+const DEFAULT_STORE_ID = ''
+const DEFAULT_ZIP = ''
 const DEFAULT_USER_ID = 'user-1'
 
 export type BuildOptions = {

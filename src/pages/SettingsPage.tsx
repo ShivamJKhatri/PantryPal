@@ -51,13 +51,13 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
   const [loadingStores, setLoadingStores] = useState(false)
   const [storesError, setStoresError] = useState('')
 
-  // Auto-fetch stores on mount (main view) and when edit mode opens
+  // Auto-fetch on mount and when storeOptions is cleared (e.g. after ZIP change)
   useEffect(() => {
-    if (prefs.zipCode && /^\d{5}$/.test(prefs.zipCode) && !isOnboarding) {
+    if (prefs.zipCode && /^\d{5}$/.test(prefs.zipCode) && !isOnboarding && !storeOptions && !loadingStores) {
       void fetchStores(prefs.zipCode)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [storeOptions])
 
   useEffect(() => {
     if (editing && zipCode && /^\d{5}$/.test(zipCode) && !storeOptions) {
@@ -269,6 +269,7 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
             if (!validateZip()) return
             finish()
             setEditing(false)
+            setStoreOptions(null) // refetch with new ZIP on return to main view
           }}
         >
           <div className="settings-panel settings-field">
