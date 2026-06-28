@@ -729,6 +729,7 @@ function RecipeCard({
               target="_blank"
               rel="noreferrer"
               onClick={(e) => e.stopPropagation()}
+              title="View original recipe source"
             >
               <IconExternal size={14} />
             </a>
@@ -750,11 +751,11 @@ function RecipeCard({
       </button>
       <div className="recipe-card__footer">
         {inCart ? (
-          <Button variant="secondary" size="sm" fullWidth onClick={onRemoveFromCart}>
+          <Button variant="secondary" size="sm" fullWidth onClick={onRemoveFromCart} title="Remove all ingredients from your cart">
             Remove from cart
           </Button>
         ) : (
-          <Button size="sm" fullWidth onClick={onAddToCart}>
+          <Button size="sm" fullWidth onClick={onAddToCart} title="Add all ingredients to your shopping cart">
             Add all to cart
           </Button>
         )}
@@ -809,6 +810,7 @@ export default function ShoppingListPage({
         className="cart-header-btn press"
         onClick={() => onViewChange({ kind: 'cart' })}
         aria-label={cartCount > 0 ? `Open cart, ${cartCount} items` : 'Open cart'}
+        title={cartCount > 0 ? `Open cart — ${cartCount} recipe${cartCount !== 1 ? 's' : ''} added` : 'Open cart'}
       >
         <IconCart size={22} />
         {cartCount > 0 && <span className="cart-header-btn__badge">{cartCount}</span>}

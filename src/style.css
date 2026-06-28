@@ -847,7 +847,7 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: var(--s-2) var(--s-4) var(--s-3);
+  margin-top: var(--s-2);
 }
 
 .recipe-card__footer {
