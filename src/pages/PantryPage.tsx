@@ -13,18 +13,17 @@ const QUICK_ADD = [
 
 interface Props {
   staples: PantryStaple[]
+  ranOutStaples: PantryStaple[]
   onAdd: (label: string) => boolean
   onRemove: (id: string) => void
+  onRestoreStaple: (id: string) => void
 }
 
-export default function PantryPage({ staples, onAdd, onRemove }: Props) {
+export default function PantryPage({ staples, ranOutStaples, onAdd, onRemove, onRestoreStaple }: Props) {
   const [input, setInput] = useState('')
-  // Staples toggled "not on hand" — removed from parent so shopping lists see them,
-  // but kept locally so the user can toggle back without re-typing.
-  const [removedStaples, setRemovedStaples] = useState<PantryStaple[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const allIds = [...staples.map(s => s.id), ...removedStaples.map(s => s.id)]
+  const allIds = [...staples.map(s => s.id), ...ranOutStaples.map(s => s.id)]
   const flipRef = useFlip(allIds)
 
   const labelsLower = new Set(staples.map((s) => s.label.toLowerCase()))
@@ -41,14 +40,9 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
 
   function handleToggle(staple: PantryStaple, currentlyActive: boolean) {
     if (currentlyActive) {
-      // Mark as "not on hand": remove from parent staples (so shopping lists update),
-      // keep in local list so we can still render it as crossed out.
-      setRemovedStaples(prev => [...prev, staple])
       onRemove(staple.id)
     } else {
-      // Restore: add back to parent staples, clear from local removed list.
-      setRemovedStaples(prev => prev.filter(s => s.id !== staple.id))
-      onAdd(staple.label)
+      onRestoreStaple(staple.id)
     }
   }
 
@@ -58,15 +52,13 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
       onRemove(existing.id)
       showToast(`Removed ${label}`, 'default')
     } else if (onAdd(label)) {
-      // Clear from removed list in case it was there
-      setRemovedStaples(prev => prev.filter(s => s.label.toLowerCase() !== label.toLowerCase()))
       showToast(`Added ${label}`, 'success')
     }
   }
 
   const displayItems = [
     ...staples.map(s => ({ staple: s, active: true })),
-    ...removedStaples.map(s => ({ staple: s, active: false })),
+    ...ranOutStaples.map(s => ({ staple: s, active: false })),
   ]
 
   return (
@@ -135,7 +127,7 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
       </div>
 
       <p className="pantry-footer-note">
-        {staples.length} on hand{removedStaples.length > 0 ? ` · ${removedStaples.length} not on hand` : ''}
+        {staples.length} on hand{ranOutStaples.length > 0 ? ` · ${ranOutStaples.length} not on hand` : ''}
       </p>
     </div>
   )
