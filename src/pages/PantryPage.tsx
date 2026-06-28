@@ -19,8 +19,17 @@ interface Props {
 
 export default function PantryPage({ staples, onAdd, onRemove }: Props) {
   const [input, setInput] = useState('')
+  const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
   const flipRef = useFlip(staples.map((s) => s.id))
+
+  function toggleDisabled(id: string) {
+    setDisabledIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
 
   const labelsLower = new Set(staples.map((s) => s.label.toLowerCase()))
 
@@ -72,23 +81,22 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
             <li
               key={staple.id}
               ref={flipRef(staple.id)}
-              className="pantry-staple-row"
+              className={`pantry-staple-row${disabledIds.has(staple.id) ? ' pantry-staple-row--disabled' : ''}`}
               style={{ '--i': index } as React.CSSProperties}
             >
               <span className="pantry-staple-dot" />
               <div className="pantry-staple-info">
                 <div className="pantry-staple-name">{staple.label}</div>
-                <div className="pantry-staple-meta">On hand · auto-excluded from lists</div>
+                <div className="pantry-staple-meta">
+                  {disabledIds.has(staple.id) ? 'Not on hand' : 'On hand · auto-excluded from lists'}
+                </div>
               </div>
-              <label className="toggle" aria-label={`Remove ${staple.label} from pantry`}>
+              <label className="toggle" aria-label={`Toggle ${staple.label}`}>
                 <input
                   type="checkbox"
                   className="toggle__input"
-                  defaultChecked
-                  onChange={() => {
-                    onRemove(staple.id)
-                    showToast(`Removed ${staple.label}`, 'default')
-                  }}
+                  checked={!disabledIds.has(staple.id)}
+                  onChange={() => toggleDisabled(staple.id)}
                 />
                 <span className="toggle__track" />
                 <span className="toggle__thumb" />
