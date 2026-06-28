@@ -38,6 +38,7 @@ export default function App() {
     addRecipeToCart,
     removeRecipeFromCart,
     updateCartItems,
+    removeRecipe,
     hasRecipes,
     cartCount,
   } = useRecipeCollection()
@@ -183,6 +184,7 @@ export default function App() {
             onUpdateCart={updateCartItems}
             onAddRecipeToCart={addRecipeToCart}
             onRemoveRecipeFromCart={removeRecipeFromCart}
+            onRemoveRecipe={removeRecipe}
             onGoToSettings={() => navigate('settings')}
           />
         </div>

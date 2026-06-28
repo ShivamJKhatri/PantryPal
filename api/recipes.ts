@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { eq } from 'drizzle-orm'
 import { getDb } from './_lib/db.js'
 import { recipeIngredients, recipes } from './_lib/schema.js'
+import { enforceRateLimit, RATE_LIMITS } from './_lib/rate-limit.js'
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
   if (request.method !== 'GET') {
@@ -9,6 +10,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
     response.status(405).json({ error: 'Method not allowed' })
     return
   }
+
+  if (!(await enforceRateLimit(request, response, RATE_LIMITS.recipes))) return
 
   try {
     const db = getDb()

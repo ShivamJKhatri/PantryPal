@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { itemFromIngredient } from './_lib/item-from-ingredient.js'
+import { enforceRateLimit, RATE_LIMITS } from './_lib/rate-limit.js'
 
 type Body = { rawText?: string }
 
@@ -14,6 +15,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
     response.status(405).json({ error: 'Method not allowed' })
     return
   }
+
+  if (!(await enforceRateLimit(request, response, RATE_LIMITS.matchItem))) return
 
   const rawText = readBody(request).rawText?.trim()
   if (!rawText) {

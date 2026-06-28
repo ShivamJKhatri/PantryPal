@@ -39,6 +39,7 @@ interface Props {
   onUpdateCart: (items: RecipeShoppingListItem[]) => void
   onAddRecipeToCart: (recipeId: string) => void
   onRemoveRecipeFromCart: (recipeId: string) => void
+  onRemoveRecipe: (recipeId: string) => void
   cartCount: number
   view: ListView
   onViewChange: (view: ListView) => void
@@ -705,6 +706,7 @@ function RecipeCard({
   onOpen,
   onAddToCart,
   onRemoveFromCart,
+  onDelete,
 }: {
   recipe: RecipeShoppingList
   staples: PantryStaple[]
@@ -713,6 +715,7 @@ function RecipeCard({
   onOpen: () => void
   onAddToCart: () => void
   onRemoveFromCart: () => void
+  onDelete: () => void
 }) {
   const { count, total } = recipeListStats(recipe.items, staples)
   const allergens = detectAllergens(recipe.items)
@@ -759,6 +762,9 @@ function RecipeCard({
             Add all to cart
           </Button>
         )}
+        <Button variant="ghost" size="sm" fullWidth className="recipe-card__delete" onClick={onDelete}>
+          Delete recipe
+        </Button>
       </div>
     </Card>
   )
@@ -774,6 +780,7 @@ export default function ShoppingListPage({
   onUpdateCart,
   onAddRecipeToCart,
   onRemoveRecipeFromCart,
+  onRemoveRecipe,
   cartCount,
   view,
   onViewChange,
@@ -954,6 +961,10 @@ export default function ShoppingListPage({
             onRemoveFromCart={() => {
               onRemoveRecipeFromCart(recipe.id)
               showToast('Removed from cart', 'default')
+            }}
+            onDelete={() => {
+              onRemoveRecipe(recipe.id)
+              showToast('Recipe deleted', 'default')
             }}
           />
         ))}

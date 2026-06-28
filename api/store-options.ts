@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
+import { enforceRateLimit, RATE_LIMITS } from './_lib/rate-limit.js'
 
 const CHAINS = [
   { id: 'store-kroger',     name: 'Kroger',      priceFactor: 1.00 },
@@ -25,11 +26,13 @@ function estimateDistance(zip: string, seed: number): number {
   return Math.round(miles * 10) / 10
 }
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' })
     return
   }
+
+  if (!(await enforceRateLimit(req, res, RATE_LIMITS.storeOptions))) return
 
   const { zipCode, estimatedTotal } = req.query
   if (!zipCode || typeof zipCode !== 'string' || !/^\d{5}$/.test(zipCode)) {
