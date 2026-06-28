@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { parseRecipeFromUrl } from './_lib/url-parser.js'
 import { buildShoppingList } from './_lib/build-shopping-list.js'
+import { enforceRateLimit, RATE_LIMITS } from './_lib/rate-limit.js'
 
 type ParseUrlBody = {
   url?: string
@@ -19,6 +20,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
     response.status(405).json({ error: 'Method not allowed' })
     return
   }
+
+  if (!(await enforceRateLimit(request, response, RATE_LIMITS.parseUrl))) return
 
   const body = readBody(request)
   const url = body.url?.trim()

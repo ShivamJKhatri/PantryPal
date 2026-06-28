@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { extractRecipeFromImage } from './_lib/vision/extract-recipe.js'
 import { buildShoppingList } from './_lib/build-shopping-list.js'
+import { enforceRateLimit, RATE_LIMITS } from './_lib/rate-limit.js'
 
 type ParseScreenshotBody = {
   imageBase64?: string
@@ -20,6 +21,8 @@ export default async function handler(request: VercelRequest, response: VercelRe
     response.status(405).json({ error: 'Method not allowed' })
     return
   }
+
+  if (!(await enforceRateLimit(request, response, RATE_LIMITS.parseScreenshot))) return
 
   try {
     const body = readBody(request)
