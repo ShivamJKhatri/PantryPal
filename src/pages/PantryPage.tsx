@@ -13,14 +13,18 @@ const QUICK_ADD = [
 
 interface Props {
   staples: PantryStaple[]
+  ranOutStaples: PantryStaple[]
   onAdd: (label: string) => boolean
   onRemove: (id: string) => void
+  onRestoreStaple: (id: string) => void
 }
 
-export default function PantryPage({ staples, onAdd, onRemove }: Props) {
+export default function PantryPage({ staples, ranOutStaples, onAdd, onRemove, onRestoreStaple }: Props) {
   const [input, setInput] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const flipRef = useFlip(staples.map((s) => s.id))
+
+  const allIds = [...staples.map(s => s.id), ...ranOutStaples.map(s => s.id)]
+  const flipRef = useFlip(allIds)
 
   const labelsLower = new Set(staples.map((s) => s.label.toLowerCase()))
 
@@ -34,6 +38,14 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
     }
   }
 
+  function handleToggle(staple: PantryStaple, currentlyActive: boolean) {
+    if (currentlyActive) {
+      onRemove(staple.id)
+    } else {
+      onRestoreStaple(staple.id)
+    }
+  }
+
   function toggleQuick(label: string) {
     const existing = staples.find((s) => s.label.toLowerCase() === label.toLowerCase())
     if (existing) {
@@ -43,6 +55,11 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
       showToast(`Added ${label}`, 'success')
     }
   }
+
+  const displayItems = [
+    ...staples.map(s => ({ staple: s, active: true })),
+    ...ranOutStaples.map(s => ({ staple: s, active: false })),
+  ]
 
   return (
     <div className="pantry-page-wrap">
@@ -66,29 +83,28 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
         </form>
       </Card>
 
-      {staples.length > 0 && (
+      {displayItems.length > 0 && (
         <ul className="pantry-staple-list stagger">
-          {staples.map((staple, index) => (
+          {displayItems.map(({ staple, active }, index) => (
             <li
               key={staple.id}
               ref={flipRef(staple.id)}
-              className="pantry-staple-row"
+              className={`pantry-staple-row${!active ? ' pantry-staple-row--disabled' : ''}`}
               style={{ '--i': index } as React.CSSProperties}
             >
               <span className="pantry-staple-dot" />
               <div className="pantry-staple-info">
                 <div className="pantry-staple-name">{staple.label}</div>
-                <div className="pantry-staple-meta">On hand · auto-excluded from lists</div>
+                <div className="pantry-staple-meta">
+                  {active ? 'On hand · auto-excluded from lists' : 'Not on hand · will appear on lists'}
+                </div>
               </div>
-              <label className="toggle" aria-label={`Remove ${staple.label} from pantry`}>
+              <label className="toggle" aria-label={`Toggle ${staple.label}`}>
                 <input
                   type="checkbox"
                   className="toggle__input"
-                  defaultChecked
-                  onChange={() => {
-                    onRemove(staple.id)
-                    showToast(`Removed ${staple.label}`, 'default')
-                  }}
+                  checked={active}
+                  onChange={() => handleToggle(staple, active)}
                 />
                 <span className="toggle__track" />
                 <span className="toggle__thumb" />
@@ -111,7 +127,7 @@ export default function PantryPage({ staples, onAdd, onRemove }: Props) {
       </div>
 
       <p className="pantry-footer-note">
-        Pre-seeded with common staples · {staples.length} currently on hand
+        {staples.length} on hand{ranOutStaples.length > 0 ? ` · ${ranOutStaples.length} not on hand` : ''}
       </p>
     </div>
   )

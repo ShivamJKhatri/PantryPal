@@ -20,6 +20,10 @@ dist-ssr
 !.env.example
 .vercel
 
+# Superpowers planning docs
+docs/superpowers/
+.superpowers/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -44,6 +44,7 @@ export default function App() {
   const [page, setPage] = useState<Page>(hasPrefs ? 'capture' : 'settings')
   const [listView, setListView] = useState<ListView>({ kind: 'recipes' })
   const [staples, setStaples] = useState<PantryStaple[]>(loadStaples)
+  const [ranOutStaples, setRanOutStaples] = useState<PantryStaple[]>([])
 
   useAppHistory(page, listView, setPage, setListView)
 
@@ -106,6 +107,12 @@ export default function App() {
       showToast('Already in your pantry', 'error')
       return false
     }
+    // If the item ran out, restore it instead of creating a duplicate
+    const ranOut = ranOutStaples.find((s) => s.label.toLowerCase() === trimmed.toLowerCase())
+    if (ranOut) {
+      restoreStaple(ranOut.id)
+      return true
+    }
     setStaples((prev) => [
       ...prev,
       {
@@ -119,7 +126,16 @@ export default function App() {
   }
 
   function removeStaple(id: string) {
+    const staple = staples.find((s) => s.id === id)
     setStaples((prev) => prev.filter((s) => s.id !== id))
+    if (staple) setRanOutStaples((prev) => [...prev, staple])
+  }
+
+  function restoreStaple(id: string) {
+    const staple = ranOutStaples.find((s) => s.id === id)
+    if (!staple) return
+    setRanOutStaples((prev) => prev.filter((s) => s.id !== id))
+    setStaples((prev) => [...prev, staple])
   }
 
   const isOnboarding = !hasPrefs && page === 'settings'
@@ -139,8 +155,8 @@ export default function App() {
           zipCode={prefs.zipCode}
         />
       )}
-      <main className={`main${isOnboarding ? ' main--onboarding' : ''}${page === 'capture' || page === 'list' ? ' main--wide' : ''}`} key={page}>
-        {page === 'capture' && (
+      <main className={`main${isOnboarding ? ' main--onboarding' : ''}${page === 'capture' || page === 'list' ? ' main--wide' : ''}`}>
+        <div style={{ display: page === 'capture' ? 'contents' : 'none' }}>
           <CapturePage
             prefs={prefs}
             onListReady={(list) => {
@@ -149,8 +165,8 @@ export default function App() {
             }}
             onGoToSettings={() => navigate('settings')}
           />
-        )}
-        {page === 'list' && (
+        </div>
+        <div style={{ display: page === 'list' ? 'contents' : 'none' }}>
           <ShoppingListPage
             collection={collection}
             staples={staples}
@@ -169,11 +185,17 @@ export default function App() {
             onRemoveRecipeFromCart={removeRecipeFromCart}
             onGoToSettings={() => navigate('settings')}
           />
-        )}
-        {page === 'pantry' && (
-          <PantryPage staples={staples} onAdd={addStaple} onRemove={removeStaple} />
-        )}
-        {page === 'settings' && (
+        </div>
+        <div style={{ display: page === 'pantry' ? 'contents' : 'none' }}>
+          <PantryPage
+            staples={staples}
+            ranOutStaples={ranOutStaples}
+            onAdd={addStaple}
+            onRemove={removeStaple}
+            onRestoreStaple={restoreStaple}
+          />
+        </div>
+        <div style={{ display: page === 'settings' ? 'contents' : 'none' }}>
           <SettingsPage
             prefs={prefs}
             isOnboarding={isOnboarding}
@@ -187,7 +209,7 @@ export default function App() {
               }
             }}
           />
-        )}
+        </div>
       </main>
       <ToastStack />
     </div>

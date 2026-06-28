@@ -57,7 +57,6 @@ h1 {
 .stagger > * {
   animation: fade-up 180ms var(--ease-out-quart) both;
   animation-delay: calc(min(var(--i, 0), 6) * 18ms);
-  will-change: transform, opacity;
 }
 
 .press { transition: transform var(--dur-fast) var(--ease-spring) }
@@ -799,9 +798,9 @@ h1 {
 .recipe-card {
   overflow: hidden;
   transition: box-shadow 220ms var(--ease-out-quart), transform 220ms var(--ease-out-quart);
-  will-change: transform, box-shadow;
 }
 .recipe-card:hover {
+  will-change: transform, box-shadow;
   transform: translateY(-3px);
   box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
 }
@@ -844,8 +843,44 @@ h1 {
   color: var(--text-muted);
 }
 
+.recipe-card__allergens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: var(--s-2);
+}
+
 .recipe-card__footer {
   padding: 0 var(--s-4) var(--s-4);
+}
+
+.allergen-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.allergen-chip--more {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.allergen-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--s-4);
+}
+.allergen-bar__label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-2);
 }
 
 .recipe-list-footer {
@@ -1737,9 +1772,11 @@ h1 {
 .pantry-page-title { font-family: var(--font-serif); font-size: var(--fs-3xl); font-weight: 700; color: var(--text); margin-bottom: var(--s-2); }
 .pantry-page-subtitle { font-size: var(--fs-sm); color: var(--text-muted); line-height: 1.6; max-width: 46ch; margin-bottom: var(--s-8); }
 .pantry-staple-list { list-style: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-card); overflow: hidden; margin-bottom: var(--s-3); }
-.pantry-staple-row { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border-bottom: 1px solid var(--border); transition: background var(--dur-fast); }
+.pantry-staple-row { display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border-bottom: 1px solid var(--border); transition: background var(--dur-fast), opacity 200ms; }
 .pantry-staple-row:last-child { border-bottom: none; }
 .pantry-staple-row:hover { background: var(--bg-elevated); }
+.pantry-staple-row--disabled { opacity: 0.5; }
+.pantry-staple-row--disabled .pantry-staple-name { text-decoration: line-through; color: var(--text-muted); }
 .pantry-staple-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
 .pantry-staple-info { flex: 1; min-width: 0; }
 .pantry-staple-name { font-size: var(--fs-sm); font-weight: 500; color: var(--text); }

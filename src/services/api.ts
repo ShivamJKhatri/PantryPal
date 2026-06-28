@@ -2,6 +2,7 @@ import type { RecipeShoppingList, StoreOptionsResponse } from '../types/models.t
 import type { UserPrefs } from '../hooks/useUserPrefs.ts'
 
 const API_BASE = '/api'
+const _urlCache = new Map<string, RecipeShoppingList>()
 
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -16,6 +17,9 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export async function extractRecipeFromUrl(url: string, prefs?: UserPrefs): Promise<RecipeShoppingList> {
+  const cacheKey = `${url}|${prefs?.storeId ?? ''}|${prefs?.zipCode ?? ''}`
+  const cached = _urlCache.get(cacheKey)
+  if (cached) return cached
   const res = await fetch(`${API_BASE}/parse-url`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -25,7 +29,9 @@ export async function extractRecipeFromUrl(url: string, prefs?: UserPrefs): Prom
     const err = await res.json().catch(() => ({ error: res.statusText }))
     throw new Error((err as { error?: string }).error ?? `API error ${res.status}`)
   }
-  return res.json() as Promise<RecipeShoppingList>
+  const data = await res.json() as RecipeShoppingList
+  _urlCache.set(cacheKey, data)
+  return data
 }
 
 export async function extractRecipeFromScreenshot(file: File, prefs?: UserPrefs): Promise<RecipeShoppingList> {
