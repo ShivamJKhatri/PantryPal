@@ -139,8 +139,8 @@ export default function App() {
           zipCode={prefs.zipCode}
         />
       )}
-      <main className={`main${isOnboarding ? ' main--onboarding' : ''}${page === 'capture' || page === 'list' ? ' main--wide' : ''}`} key={page}>
-        {page === 'capture' && (
+      <main className={`main${isOnboarding ? ' main--onboarding' : ''}${page === 'capture' || page === 'list' ? ' main--wide' : ''}`}>
+        <div style={{ display: page === 'capture' ? 'contents' : 'none' }}>
           <CapturePage
             prefs={prefs}
             onListReady={(list) => {
@@ -149,8 +149,8 @@ export default function App() {
             }}
             onGoToSettings={() => navigate('settings')}
           />
-        )}
-        {page === 'list' && (
+        </div>
+        <div style={{ display: page === 'list' ? 'contents' : 'none' }}>
           <ShoppingListPage
             collection={collection}
             staples={staples}
@@ -169,11 +169,11 @@ export default function App() {
             onRemoveRecipeFromCart={removeRecipeFromCart}
             onGoToSettings={() => navigate('settings')}
           />
-        )}
-        {page === 'pantry' && (
+        </div>
+        <div style={{ display: page === 'pantry' ? 'contents' : 'none' }}>
           <PantryPage staples={staples} onAdd={addStaple} onRemove={removeStaple} />
-        )}
-        {page === 'settings' && (
+        </div>
+        <div style={{ display: page === 'settings' ? 'contents' : 'none' }}>
           <SettingsPage
             prefs={prefs}
             isOnboarding={isOnboarding}
@@ -187,7 +187,7 @@ export default function App() {
               }
             }}
           />
-        )}
+        </div>
       </main>
       <ToastStack />
     </div>

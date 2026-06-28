@@ -57,7 +57,6 @@ h1 {
 .stagger > * {
   animation: fade-up 180ms var(--ease-out-quart) both;
   animation-delay: calc(min(var(--i, 0), 6) * 18ms);
-  will-change: transform, opacity;
 }
 
 .press { transition: transform var(--dur-fast) var(--ease-spring) }
@@ -799,9 +798,9 @@ h1 {
 .recipe-card {
   overflow: hidden;
   transition: box-shadow 220ms var(--ease-out-quart), transform 220ms var(--ease-out-quart);
-  will-change: transform, box-shadow;
 }
 .recipe-card:hover {
+  will-change: transform, box-shadow;
   transform: translateY(-3px);
   box-shadow: 0 8px 28px rgba(0,0,0,0.10), 0 2px 8px rgba(0,0,0,0.06);
 }
