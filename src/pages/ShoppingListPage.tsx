@@ -401,6 +401,7 @@ function RecipeDetailView({
   onNewRecipe,
   onUpdateRecipe,
   onAddToPantry,
+  onRemoveFromPantry,
   onAddToCart,
   onRemoveFromCart,
   onBack,
@@ -412,6 +413,7 @@ function RecipeDetailView({
   onNewRecipe: () => void
   onUpdateRecipe: (items: RecipeShoppingListItem[]) => void
   onAddToPantry: (label: string) => void
+  onRemoveFromPantry: (stapleId: string) => void
   onAddToCart: () => void
   onRemoveFromCart: () => void
   onBack: () => void
@@ -599,6 +601,7 @@ function RecipeDetailView({
                 staples={staples}
                 onItemsChange={onUpdateRecipe}
                 onAddToPantry={onAddToPantry}
+                onRemoveFromPantry={onRemoveFromPantry}
               />
             </>
           ) : (
@@ -915,6 +918,7 @@ export default function ShoppingListPage({
         onNewRecipe={onNewRecipe}
         onUpdateRecipe={(items) => onUpdateRecipe(selectedRecipe.id, items)}
         onAddToPantry={onAddToPantry}
+        onRemoveFromPantry={onRemoveFromPantry}
         onAddToCart={() => { onAddRecipeToCart(selectedRecipe.id); showToast('Added to cart', 'success') }}
         onRemoveFromCart={() => { onRemoveRecipeFromCart(selectedRecipe.id); showToast('Removed from cart', 'default') }}
         onBack={onBack}

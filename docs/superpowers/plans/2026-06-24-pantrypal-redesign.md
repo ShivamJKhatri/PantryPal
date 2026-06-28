@@ -8,7 +8,6 @@
 
 **Tech Stack:** React 19, Vite, pure CSS custom properties (no Tailwind/shadcn). Google Fonts — Playfair Display added alongside existing DM Sans.
 
-## Global Constraints
 
 - No new npm dependencies
 - No changes to `src/hooks/` (except `useUserPrefs.ts` which adds two fields), `src/lib/`, `src/services/`, `src/types/`
