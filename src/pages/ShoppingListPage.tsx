@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import type { PantryStaple, RecipeCollection, RecipeShoppingList, RecipeShoppingListItem, SuggestionItem, StoreOption } from '../types/models.ts'
 import { STORE_OPTIONS } from './SettingsPage.tsx'
 import { matchIngredientLine, getStoreOptions } from '../services/api.ts'
+import { detectAllergens } from '../lib/allergens.ts'
 import { showToast } from '../hooks/useToast.ts'
 import { getItemDisplay } from '../lib/display-item.ts'
 import { calcActiveTotal } from '../lib/merge-items.ts'
@@ -447,6 +448,7 @@ function RecipeDetailView({
   const pantryExcluded = allItems.filter((i) => i.excluded)
   const baseTotal = calcActiveTotal(allItems)
   const totalSaved = recipe.items.reduce((s, i) => s + i.price, 0) - baseTotal
+  const allergens = detectAllergens(recipe.items)
 
   // Grocery total at selected store (from API) or base total
   const groceryTotal = selectedStore?.groceryEstimate ?? baseTotal
@@ -477,6 +479,15 @@ function RecipeDetailView({
               + New recipe
             </button>
           </div>
+
+          {allergens.length > 0 && (
+            <div className="allergen-bar">
+              <span className="allergen-bar__label">Contains</span>
+              {allergens.map((a) => (
+                <span key={a} className="allergen-chip">{a}</span>
+              ))}
+            </div>
+          )}
 
           {/* Store picker — full comparison for this recipe */}
           <div className="store-picker-card">
@@ -701,6 +712,7 @@ function RecipeCard({
   onRemoveFromCart: () => void
 }) {
   const { count, total } = recipeListStats(recipe.items, staples)
+  const allergens = detectAllergens(recipe.items)
 
   return (
     <Card padding="none" className="recipe-card">
@@ -722,6 +734,16 @@ function RecipeCard({
         <p className="recipe-card__meta">
           {count} items · ${total.toFixed(2)} est. · {storeDisplayName(recipe.storeId)}
         </p>
+        {allergens.length > 0 && (
+          <div className="recipe-card__allergens">
+            {allergens.slice(0, 3).map((a) => (
+              <span key={a} className="allergen-chip">{a}</span>
+            ))}
+            {allergens.length > 3 && (
+              <span className="allergen-chip allergen-chip--more">+{allergens.length - 3} more</span>
+            )}
+          </div>
+        )}
       </button>
       <div className="recipe-card__footer">
         {inCart ? (

@@ -843,8 +843,44 @@ h1 {
   color: var(--text-muted);
 }
 
+.recipe-card__allergens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: var(--s-2) var(--s-4) var(--s-3);
+}
+
 .recipe-card__footer {
   padding: 0 var(--s-4) var(--s-4);
+}
+
+.allergen-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: #FEF3C7;
+  color: #92400E;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.allergen-chip--more {
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.allergen-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: var(--s-4);
+}
+.allergen-bar__label {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-2);
 }
 
 .recipe-list-footer {
