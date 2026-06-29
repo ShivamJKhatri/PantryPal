@@ -49,8 +49,8 @@ export default function BottomNav({ page, onNavigate, hasList, stapleCount, stor
   return (
     <nav className="bottom-nav" aria-label="Main">
       <span className="bottom-nav__brand">
-        <span className="bottom-nav__brand-p">P</span>
-        PantryPal
+        <span className="bottom-nav__brand-p">L</span>
+        LettuceEat
       </span>
       <div className="bottom-nav__tabs-wrap">
         <div className="bottom-nav__tabs" ref={tabsRef}>

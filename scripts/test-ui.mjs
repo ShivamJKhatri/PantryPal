@@ -103,7 +103,7 @@ console.log('\n[1] App loads')
 try {
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 10000 })
   const title = await page.title()
-  if (title === 'PantryPal') { ok('title is PantryPal') } else { fail('title', 'got ' + title) }
+  if (title === 'LettuceEat') { ok('title is LettuceEat') } else { fail('title', 'got ' + title) }
 } catch (e) { fail('page load', e.message) }
 
 // ── 2. Nav (hidden during onboarding) ─────────────────────────────────────────
@@ -117,7 +117,7 @@ try {
 console.log('\n[3] Onboarding — ZIP first, then ranked stores')
 try {
   const h1 = await page.textContent('h1')
-  if (h1 && h1.includes('Welcome to PantryPal')) {
+  if (h1 && h1.includes('Welcome to LettuceEat')) {
     ok('onboarding shown on first visit')
   } else {
     fail('onboarding h1', 'got: ' + h1)

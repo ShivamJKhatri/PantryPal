@@ -182,7 +182,7 @@ export async function parseRecipeFromUrl(url: string): Promise<ExtractedRecipe> 
   try {
     const res = await fetch(url, {
       signal: controller.signal,
-      headers: { 'User-Agent': 'PantryPal-RecipeBot/1.0' },
+      headers: { 'User-Agent': 'LettuceEat-RecipeBot/1.0' },
     })
     if (!res.ok) throw new Error(`Fetch failed: ${res.status} ${res.statusText}`)
     html = await res.text()

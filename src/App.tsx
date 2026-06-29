@@ -16,11 +16,14 @@ import {
   type Page,
 } from './lib/app-history.ts'
 
-const PANTRY_STORAGE_KEY = 'pantrypal_staples'
+const PANTRY_STORAGE_KEY = 'lettuceeat_staples'
+const LEGACY_PANTRY_STORAGE_KEYS = ['waddamaq_staples', 'pantrypal_staples']
 
 function loadStaples(): PantryStaple[] {
   try {
-    const raw = localStorage.getItem(PANTRY_STORAGE_KEY)
+    const raw =
+      localStorage.getItem(PANTRY_STORAGE_KEY) ??
+      LEGACY_PANTRY_STORAGE_KEYS.map((k) => localStorage.getItem(k)).find(Boolean)
     return raw ? (JSON.parse(raw) as PantryStaple[]) : []
   } catch {
     return []

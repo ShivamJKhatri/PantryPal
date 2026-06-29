@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { RecipeShoppingList } from '../types/models.ts'
 
-const LIST_KEY = 'pantrypal_list'
+const LIST_KEY = 'lettuceeat_list'
+const LEGACY_LIST_KEYS = ['waddamaq_list', 'pantrypal_list']
 
 function loadList(): RecipeShoppingList | null {
   try {
-    const raw = sessionStorage.getItem(LIST_KEY)
+    const raw =
+      sessionStorage.getItem(LIST_KEY) ??
+      LEGACY_LIST_KEYS.map((k) => sessionStorage.getItem(k)).find(Boolean)
     return raw ? (JSON.parse(raw) as RecipeShoppingList) : null
   } catch {
     return null
