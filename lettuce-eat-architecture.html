@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Lettuce Eat — Architecture Diagram</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #f0ede6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+    gap: 24px;
+  }
+  h1 { font-size: 22px; font-weight: 700; color: #1a1a1a; letter-spacing: -0.02em; }
+  .subtitle { font-size: 14px; color: #666; margin-top: 4px; }
+  .toolbar { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  button {
+    padding: 10px 20px;
+    border-radius: 999px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  button:active { transform: scale(0.97); }
+  .btn-svg { background: #2d5016; color: #fff; }
+  .btn-png { background: #1a1a1a; color: #fff; }
+  button:hover { opacity: 0.85; }
+  .diagram-wrap {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+    padding: 24px;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  svg { display: block; }
+</style>
+</head>
+<body>
+<div>
+  <h1>Lettuce Eat — Architecture Diagram</h1>
+  <p class="subtitle">React 19 + TypeScript SPA · Vercel Serverless · AWS Bedrock · PostgreSQL</p>
+</div>
+<div class="toolbar">
+  <button class="btn-svg" onclick="downloadSVG()">⬇ Download SVG</button>
+  <button class="btn-png" onclick="downloadPNG()">⬇ Download PNG</button>
+</div>
+<div class="diagram-wrap">
+<svg id="diagram" width="960" height="780" viewBox="0 0 960 780" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#94a3b8"/>
+    </marker>
+    <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#2d5016"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#92400e"/>
+    </marker>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.10"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="780" fill="#f8f7f4" rx="12"/>
+
+  <!-- Layer bands -->
+  <rect x="0" y="20" width="960" height="100" fill="#eef4ea" rx="0" opacity="0.6"/>
+  <rect x="0" y="130" width="960" height="170" fill="#e8f0ff" rx="0" opacity="0.5"/>
+  <rect x="0" y="310" width="960" height="200" fill="#fef9ec" rx="0" opacity="0.5"/>
+  <rect x="0" y="520" width="960" height="240" fill="#fef2f2" rx="0" opacity="0.4"/>
+
+  <text x="14" y="72" font-size="10" font-weight="700" fill="#2d5016" letter-spacing="0.08em" text-anchor="middle" transform="rotate(-90,14,72)">BROWSER</text>
+  <text x="14" y="215" font-size="10" font-weight="700" fill="#1e3a8a" letter-spacing="0.08em" text-anchor="middle" transform="rotate(-90,14,215)">VERCEL</text>
+  <text x="14" y="408" font-size="10" font-weight="700" fill="#92400e" letter-spacing="0.08em" text-anchor="middle" transform="rotate(-90,14,408)">SERVERLESS</text>
+  <text x="14" y="638" font-size="10" font-weight="700" fill="#7c3aed" letter-spacing="0.08em" text-anchor="middle" transform="rotate(-90,14,638)">EXTERNAL</text>
+
+  <!-- ═══ LAYER 1 — BROWSER / REACT SPA ═══ -->
+  <rect x="32" y="28" width="900" height="88" rx="10" fill="#2d5016" filter="url(#shadow)"/>
+  <text x="52" y="50" font-size="13" font-weight="700" fill="#fff">React 19 SPA — src/</text>
+
+  <rect x="52" y="60" width="130" height="44" rx="7" fill="#fff" opacity="0.15"/>
+  <text x="117" y="79" font-size="11" font-weight="600" fill="#fff" text-anchor="middle">CapturePage</text>
+  <text x="117" y="95" font-size="9" fill="#c8e6b0" text-anchor="middle">URL / screenshot input</text>
+
+  <rect x="196" y="60" width="140" height="44" rx="7" fill="#fff" opacity="0.15"/>
+  <text x="266" y="79" font-size="11" font-weight="600" fill="#fff" text-anchor="middle">ShoppingListPage</text>
+  <text x="266" y="95" font-size="9" fill="#c8e6b0" text-anchor="middle">Store picker · list · recipe</text>
+
+  <rect x="350" y="60" width="120" height="44" rx="7" fill="#fff" opacity="0.15"/>
+  <text x="410" y="79" font-size="11" font-weight="600" fill="#fff" text-anchor="middle">SettingsPage</text>
+  <text x="410" y="95" font-size="9" fill="#c8e6b0" text-anchor="middle">ZIP · store comparison</text>
+
+  <rect x="484" y="60" width="110" height="44" rx="7" fill="#fff" opacity="0.15"/>
+  <text x="539" y="79" font-size="11" font-weight="600" fill="#fff" text-anchor="middle">PantryPage</text>
+  <text x="539" y="95" font-size="9" fill="#c8e6b0" text-anchor="middle">Staples management</text>
+
+  <rect x="608" y="60" width="145" height="44" rx="7" fill="#fff" opacity="0.12"/>
+  <text x="680" y="76" font-size="10" font-weight="600" fill="#d0f0b8" text-anchor="middle">Hooks &amp; State</text>
+  <text x="680" y="91" font-size="9" fill="#c8e6b0" text-anchor="middle">useUserPrefs · useRecipeCollection</text>
+  <text x="680" y="103" font-size="9" fill="#c8e6b0" text-anchor="middle">localStorage · sessionStorage</text>
+
+  <rect x="766" y="60" width="150" height="44" rx="7" fill="#fff" opacity="0.12"/>
+  <text x="841" y="76" font-size="10" font-weight="600" fill="#d0f0b8" text-anchor="middle">api.ts (fetch client)</text>
+  <text x="841" y="91" font-size="9" fill="#c8e6b0" text-anchor="middle">extractRecipeFromUrl/Screenshot</text>
+  <text x="841" y="103" font-size="9" fill="#c8e6b0" text-anchor="middle">getStoreOptions · matchItem</text>
+
+  <!-- ═══ LAYER 2 — VERCEL ═══ -->
+  <rect x="32" y="138" width="900" height="154" rx="10" fill="#1e3a8a" opacity="0.08" stroke="#1e3a8a" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="52" y="158" font-size="11" font-weight="700" fill="#1e40af">▲ Vercel Platform</text>
+
+  <rect x="52" y="165" width="180" height="112" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="142" y="184" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">Static Build</text>
+  <text x="142" y="200" font-size="9" fill="#64748b" text-anchor="middle">Vite + TypeScript</text>
+  <line x1="62" y1="208" x2="222" y2="208" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="72" y="222" font-size="9" fill="#475569">• index.html</text>
+  <text x="72" y="236" font-size="9" fill="#475569">• assets/index-*.js (240 kB gz)</text>
+  <text x="72" y="250" font-size="9" fill="#475569">• assets/index-*.css (43 kB gz)</text>
+  <text x="72" y="264" font-size="9" fill="#475569">• View Transition API navigation</text>
+
+  <rect x="252" y="165" width="680" height="112" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="592" y="184" font-size="11" font-weight="700" fill="#1e40af" text-anchor="middle">Serverless Functions — api/</text>
+  <line x1="262" y1="190" x2="922" y2="190" stroke="#e2e8f0" stroke-width="1"/>
+
+  <rect x="268" y="198" width="110" height="68" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="323" y="215" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">parse-url.ts</text>
+  <text x="323" y="229" font-size="8.5" fill="#475569" text-anchor="middle">POST /api/parse-url</text>
+  <text x="323" y="242" font-size="8" fill="#64748b" text-anchor="middle">Fetch page HTML</text>
+  <text x="323" y="254" font-size="8" fill="#64748b" text-anchor="middle">JSON-LD → Bedrock</text>
+
+  <rect x="392" y="198" width="120" height="68" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="452" y="215" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">parse-screenshot.ts</text>
+  <text x="452" y="229" font-size="8.5" fill="#475569" text-anchor="middle">POST /api/parse-screenshot</text>
+  <text x="452" y="242" font-size="8" fill="#64748b" text-anchor="middle">Base64 image</text>
+  <text x="452" y="254" font-size="8" fill="#64748b" text-anchor="middle">Vision → Bedrock</text>
+
+  <rect x="526" y="198" width="110" height="68" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="581" y="215" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">store-options.ts</text>
+  <text x="581" y="229" font-size="8.5" fill="#475569" text-anchor="middle">GET /api/store-options</text>
+  <text x="581" y="242" font-size="8" fill="#64748b" text-anchor="middle">ZIP hash → distances</text>
+  <text x="581" y="254" font-size="8" fill="#64748b" text-anchor="middle">Gas cost · price factors</text>
+
+  <rect x="650" y="198" width="110" height="68" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="705" y="215" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">match-item.ts</text>
+  <text x="705" y="229" font-size="8.5" fill="#475569" text-anchor="middle">POST /api/match-item</text>
+  <text x="705" y="242" font-size="8" fill="#64748b" text-anchor="middle">Normalize ingredient</text>
+  <text x="705" y="254" font-size="8" fill="#64748b" text-anchor="middle">Catalog lookup</text>
+
+  <rect x="774" y="198" width="110" height="68" rx="6" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="829" y="215" font-size="10" font-weight="700" fill="#1e40af" text-anchor="middle">recipes.ts</text>
+  <text x="829" y="229" font-size="8.5" fill="#475569" text-anchor="middle">GET /api/recipes</text>
+  <text x="829" y="242" font-size="8" fill="#64748b" text-anchor="middle">Drizzle ORM</text>
+  <text x="829" y="254" font-size="8" fill="#64748b" text-anchor="middle">Read saved recipes</text>
+
+  <!-- ═══ LAYER 3 — _lib ═══ -->
+  <rect x="32" y="318" width="900" height="184" rx="10" fill="#fffbeb" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="52" y="338" font-size="11" font-weight="700" fill="#92400e">Shared Library — api/_lib/</text>
+
+  <rect x="52" y="346" width="185" height="144" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="144" y="365" font-size="11" font-weight="700" fill="#92400e" text-anchor="middle">url-parser.ts</text>
+  <line x1="62" y1="372" x2="227" y2="372" stroke="#fde68a" stroke-width="1"/>
+  <text x="62" y="387" font-size="8.5" fill="#475569">1. Fetch recipe page HTML</text>
+  <text x="62" y="401" font-size="8.5" fill="#475569">2. Extract JSON-LD schema.org/Recipe</text>
+  <text x="62" y="415" font-size="8.5" fill="#78350f">   → title, ingredients, steps</text>
+  <text x="62" y="429" font-size="8.5" fill="#78350f">   → servings, prepTime, cookTime</text>
+  <text x="62" y="443" font-size="8.5" fill="#475569">3. Fallback: strip HTML → Bedrock</text>
+  <text x="62" y="457" font-size="8.5" fill="#475569">   parseDuration(ISO 8601)</text>
+  <text x="62" y="478" font-size="8" fill="#92400e" font-style="italic">vision/types.ts · vision/prompt.ts</text>
+
+  <rect x="252" y="346" width="180" height="144" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="342" y="365" font-size="11" font-weight="700" fill="#92400e" text-anchor="middle">build-shopping-list.ts</text>
+  <line x1="262" y1="372" x2="422" y2="372" stroke="#fde68a" stroke-width="1"/>
+  <text x="262" y="387" font-size="8.5" fill="#475569">Map ingredients → list items</text>
+  <text x="262" y="401" font-size="8.5" fill="#475569">itemFromIngredient() pricing</text>
+  <text x="262" y="415" font-size="8.5" fill="#475569">estimatedTotal calculation</text>
+  <text x="262" y="429" font-size="8.5" fill="#475569">Attach recipe metadata</text>
+  <text x="262" y="443" font-size="8.5" fill="#475569">  recipeSteps / servings / time</text>
+  <text x="262" y="457" font-size="8.5" fill="#475569">Async save to DB (non-blocking)</text>
+
+  <rect x="448" y="346" width="180" height="144" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="538" y="365" font-size="11" font-weight="700" fill="#92400e" text-anchor="middle">store-options logic</text>
+  <line x1="458" y1="372" x2="618" y2="372" stroke="#fde68a" stroke-width="1"/>
+  <text x="458" y="387" font-size="8.5" fill="#475569">6 chain price factors:</text>
+  <text x="458" y="401" font-size="8.5" fill="#64748b">  Walmart 0.88× · Kroger 1.00×</text>
+  <text x="458" y="415" font-size="8.5" fill="#64748b">  Safeway 1.05× · Publix 1.08×</text>
+  <text x="458" y="429" font-size="8.5" fill="#64748b">  Target 1.12× · Whole Foods 1.35×</text>
+  <text x="458" y="443" font-size="8.5" fill="#475569">Deterministic distance hash(ZIP)</text>
+  <text x="458" y="457" font-size="8.5" fill="#475569">Gas: (dist×2/28) × $3.45/gal</text>
+  <text x="458" y="471" font-size="8.5" fill="#475569">Sort by totalWithTravel</text>
+
+  <rect x="644" y="346" width="170" height="144" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="729" y="365" font-size="11" font-weight="700" fill="#92400e" text-anchor="middle">db.ts / schema.ts</text>
+  <line x1="654" y1="372" x2="804" y2="372" stroke="#fde68a" stroke-width="1"/>
+  <text x="654" y="387" font-size="8.5" fill="#475569">Drizzle ORM (PostgreSQL)</text>
+  <text x="654" y="401" font-size="8.5" fill="#475569">Tables:</text>
+  <text x="654" y="415" font-size="8.5" fill="#64748b">  recipes</text>
+  <text x="654" y="429" font-size="8.5" fill="#64748b">  recipe_ingredients</text>
+  <text x="654" y="443" font-size="8.5" fill="#475569">Connection pool (pool.ts)</text>
+  <text x="654" y="457" font-size="8.5" fill="#475569">Non-blocking async save</text>
+
+  <rect x="830" y="346" width="92" height="144" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <text x="876" y="363" font-size="10" font-weight="700" fill="#92400e" text-anchor="middle">Utilities</text>
+  <line x1="840" y1="370" x2="912" y2="370" stroke="#fde68a" stroke-width="1"/>
+  <text x="840" y="384" font-size="8" fill="#475569">parse-qty.ts</text>
+  <text x="840" y="397" font-size="7.5" fill="#64748b">  qty · unit parsing</text>
+  <text x="840" y="412" font-size="8" fill="#475569">normalizer.ts</text>
+  <text x="840" y="425" font-size="7.5" fill="#64748b">  ingredient names</text>
+  <text x="840" y="440" font-size="8" fill="#475569">store-catalog.ts</text>
+  <text x="840" y="453" font-size="7.5" fill="#64748b">  product catalog</text>
+  <text x="840" y="468" font-size="8" fill="#475569">rate-limit.ts</text>
+  <text x="840" y="481" font-size="7.5" fill="#64748b">  per-IP rate limiting</text>
+
+  <!-- ═══ LAYER 4 — EXTERNAL SERVICES ═══ -->
+  <rect x="32" y="528" width="900" height="220" rx="10" fill="#fdf4ff" stroke="#d946ef" stroke-width="1.5" stroke-dasharray="6,3"/>
+  <text x="52" y="548" font-size="11" font-weight="700" fill="#7c3aed">External Services</text>
+
+  <rect x="52" y="558" width="240" height="174" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <rect x="52" y="558" width="240" height="38" rx="8" fill="#ff9900" opacity="0.15"/>
+  <text x="172" y="572" font-size="12" font-weight="700" fill="#c45d00" text-anchor="middle">☁ AWS Bedrock</text>
+  <text x="172" y="588" font-size="9" fill="#7c3aed" text-anchor="middle">amazon.nova-lite-v1:0</text>
+  <line x1="62" y1="598" x2="282" y2="598" stroke="#e9d5ff" stroke-width="1"/>
+  <text x="62" y="613" font-size="8.5" fill="#475569">Text extraction (URL fallback):</text>
+  <text x="62" y="627" font-size="8" fill="#64748b">  Structured JSON response</text>
+  <text x="62" y="641" font-size="8" fill="#64748b">  title · ingredients · steps</text>
+  <text x="62" y="655" font-size="8" fill="#64748b">  servings · prepTime · cookTime</text>
+  <text x="62" y="671" font-size="8.5" fill="#475569">Vision extraction (screenshot):</text>
+  <text x="62" y="685" font-size="8" fill="#64748b">  Image → recipe JSON</text>
+  <text x="62" y="699" font-size="8" fill="#64748b">  maxTokens: 2000  temp: 0.2</text>
+  <text x="62" y="715" font-size="8" fill="#92400e" font-style="italic">Only called when JSON-LD absent</text>
+
+  <rect x="312" y="558" width="200" height="174" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <rect x="312" y="558" width="200" height="38" rx="8" fill="#336791" opacity="0.15"/>
+  <text x="412" y="572" font-size="12" font-weight="700" fill="#1e40af" text-anchor="middle">🐘 PostgreSQL</text>
+  <text x="412" y="588" font-size="9" fill="#475569" text-anchor="middle">via @vercel/postgres</text>
+  <line x1="322" y1="598" x2="502" y2="598" stroke="#bfdbfe" stroke-width="1"/>
+  <text x="322" y="613" font-size="8.5" fill="#475569">Persists parsed recipes</text>
+  <text x="322" y="627" font-size="8.5" fill="#475569">Tables:</text>
+  <text x="322" y="641" font-size="8" fill="#64748b">  recipes (id, title, sourceUrl…)</text>
+  <text x="322" y="655" font-size="8" fill="#64748b">  recipe_ingredients (rawText…)</text>
+  <text x="322" y="671" font-size="8.5" fill="#475569">Non-blocking write (fire &amp; forget)</text>
+  <text x="322" y="685" font-size="8.5" fill="#475569">Read via GET /api/recipes</text>
+
+  <rect x="532" y="558" width="190" height="174" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <rect x="532" y="558" width="190" height="38" rx="8" fill="#10b981" opacity="0.12"/>
+  <text x="627" y="572" font-size="12" font-weight="700" fill="#065f46" text-anchor="middle">🌐 Recipe Websites</text>
+  <text x="627" y="588" font-size="9" fill="#475569" text-anchor="middle">scraped on request</text>
+  <line x1="542" y1="598" x2="712" y2="598" stroke="#a7f3d0" stroke-width="1"/>
+  <text x="542" y="613" font-size="8.5" fill="#475569">JSON-LD schema.org/Recipe:</text>
+  <text x="542" y="627" font-size="8" fill="#64748b">  Budget Bytes · Simply Recipes</text>
+  <text x="542" y="641" font-size="8" fill="#64748b">  Minimalist Baker · Serious Eats</text>
+  <text x="542" y="655" font-size="8" fill="#64748b">  Cookie &amp; Kate · RecipeTin Eats</text>
+  <text x="542" y="671" font-size="8.5" fill="#475569">User-Agent: Lettuce-Eat-RecipeBot</text>
+  <text x="542" y="685" font-size="8.5" fill="#475569">Timeout: 10s</text>
+  <text x="542" y="699" font-size="8" fill="#92400e" font-style="italic">Bedrock fallback if no JSON-LD</text>
+
+  <rect x="740" y="558" width="180" height="174" rx="8" fill="#fff" filter="url(#shadow)"/>
+  <rect x="740" y="558" width="180" height="38" rx="8" fill="#8b5cf6" opacity="0.12"/>
+  <text x="830" y="572" font-size="12" font-weight="700" fill="#5b21b6" text-anchor="middle">🗄 Browser Storage</text>
+  <text x="830" y="588" font-size="9" fill="#475569" text-anchor="middle">client-side only</text>
+  <line x1="750" y1="598" x2="910" y2="598" stroke="#ede9fe" stroke-width="1"/>
+  <text x="750" y="613" font-size="8.5" fill="#475569">localStorage:</text>
+  <text x="750" y="627" font-size="8" fill="#64748b">  lettuceeat_user_prefs</text>
+  <text x="750" y="641" font-size="8" fill="#64748b">    storeId · storeName · zipCode</text>
+  <text x="750" y="655" font-size="8" fill="#64748b">    cheapestMatch · flagLowConfidence</text>
+  <text x="750" y="669" font-size="8" fill="#64748b">  lettuceeat_staples</text>
+  <text x="750" y="685" font-size="8.5" fill="#475569">sessionStorage:</text>
+  <text x="750" y="699" font-size="8" fill="#64748b">  lettuceeat_recipes</text>
+  <text x="750" y="713" font-size="8" fill="#64748b">    recipes · cartItems · cartRecipeIds</text>
+
+  <!-- Arrows -->
+  <path d="M841 116 L841 132" stroke="#2d5016" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
+  <text x="848" y="126" font-size="7.5" fill="#2d5016">HTTPS</text>
+  <path d="M323 277 L323 338" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+  <path d="M452 277 L270 338" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+  <path d="M581 277 L538 338" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+  <path d="M705 277 L876 338" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+  <path d="M829 277 L729 338" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="4,2"/>
+  <path d="M144 490 L172 550" stroke="#92400e" stroke-width="1.5" fill="none" marker-end="url(#arrow-amber)" stroke-dasharray="5,2"/>
+  <text x="120" y="528" font-size="7.5" fill="#92400e">Bedrock API</text>
+  <text x="120" y="539" font-size="7.5" fill="#92400e">(fallback only)</text>
+  <path d="M237 418 L600 550" stroke="#065f46" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,2"/>
+  <text x="390" y="488" font-size="7.5" fill="#065f46">HTTP fetch</text>
+  <path d="M342 490 L412 550" stroke="#1e40af" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,2"/>
+  <text x="354" y="528" font-size="7.5" fill="#1e40af">async write</text>
+  <path d="M729 490 L412 550" stroke="#1e40af" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="5,2"/>
+  <path d="M730 90 L830 550" stroke="#5b21b6" stroke-width="1.5" fill="none" marker-end="url(#arrow)" stroke-dasharray="3,3" opacity="0.5"/>
+
+  <!-- Legend -->
+  <rect x="32" y="755" width="900" height="1" fill="#e2e8f0"/>
+  <text x="52" y="773" font-size="9" fill="#64748b" font-weight="600">DATA FLOW:</text>
+  <line x1="135" y1="769" x2="175" y2="769" stroke="#2d5016" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="180" y="773" font-size="9" fill="#64748b">HTTPS API call</text>
+  <line x1="265" y1="769" x2="305" y2="769" stroke="#92400e" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#arrow-amber)"/>
+  <text x="310" y="773" font-size="9" fill="#64748b">Bedrock (AI fallback)</text>
+  <line x1="435" y1="769" x2="475" y2="769" stroke="#1e40af" stroke-width="1.5" stroke-dasharray="5,2" marker-end="url(#arrow)"/>
+  <text x="480" y="773" font-size="9" fill="#64748b">DB write (async)</text>
+  <line x1="585" y1="769" x2="625" y2="769" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrow)"/>
+  <text x="630" y="773" font-size="9" fill="#64748b">Internal function call</text>
+  <text x="790" y="773" font-size="9" fill="#94a3b8">© Lettuce Eat 2026</text>
+</svg>
+</div>
+
+<script>
+function downloadSVG() {
+  const svg = document.getElementById('diagram')
+  const serializer = new XMLSerializer()
+  let svgStr = '<?xml version="1.0" encoding="UTF-8"?>\n' + serializer.serializeToString(svg)
+  const blob = new Blob([svgStr], { type: 'image/svg+xml' })
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'lettuce-eat-architecture.svg'
+  a.click()
+  URL.revokeObjectURL(a.href)
+}
+
+function downloadPNG() {
+  const svg = document.getElementById('diagram')
+  const scale = 2
+  const canvas = document.createElement('canvas')
+  canvas.width = 960 * scale
+  canvas.height = 780 * scale
+  const ctx = canvas.getContext('2d')
+  ctx.scale(scale, scale)
+  ctx.fillStyle = '#f8f7f4'
+  ctx.fillRect(0, 0, 960, 780)
+  const serializer = new XMLSerializer()
+  const svgStr = serializer.serializeToString(svg)
+  const blob = new Blob([svgStr], { type: 'image/svg+xml' })
+  const url = URL.createObjectURL(blob)
+  const img = new Image()
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, 960, 780)
+    URL.revokeObjectURL(url)
+    const a = document.createElement('a')
+    a.href = canvas.toDataURL('image/png')
+    a.download = 'lettuce-eat-architecture.png'
+    a.click()
+  }
+  img.src = url
+}
+</script>
+</body>
+</html>

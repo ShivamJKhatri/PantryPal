@@ -203,7 +203,7 @@ export default function SettingsPage({ prefs, onSave, isOnboarding }: Props) {
   if (isOnboarding) {
     return (
       <PageShell
-        title="Welcome to LettuceEat"
+        title="Welcome to Lettuce Eat"
         subtitle={
           step === 1
             ? 'Enter your ZIP to find the best store nearby'
