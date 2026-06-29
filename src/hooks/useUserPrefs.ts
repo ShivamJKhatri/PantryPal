@@ -8,7 +8,8 @@ export type UserPrefs = {
   flagLowConfidence: boolean
 }
 
-const STORAGE_KEY = 'pantrypal_user_prefs'
+const STORAGE_KEY = 'lettuceeat_user_prefs'
+const LEGACY_STORAGE_KEYS = ['waddamaq_user_prefs', 'pantrypal_user_prefs']
 
 const EMPTY_PREFS: UserPrefs = {
   storeId: '',
@@ -20,7 +21,9 @@ const EMPTY_PREFS: UserPrefs = {
 
 function loadPrefs(): UserPrefs {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ??
+      LEGACY_STORAGE_KEYS.map((k) => localStorage.getItem(k)).find(Boolean)
     if (!raw) return EMPTY_PREFS
     return { ...EMPTY_PREFS, ...(JSON.parse(raw) as Partial<UserPrefs>) }
   } catch {

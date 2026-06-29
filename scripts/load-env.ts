@@ -13,7 +13,7 @@ if (!process.env.PGHOST) {
     [
       'Missing PGHOST.',
       'Vercel marks Aurora vars as Sensitive, so `vercel env pull` downloads them as empty strings.',
-      'Fix: Vercel Dashboard -> pantry-pal -> Settings -> Environment Variables',
+      'Fix: Vercel Dashboard -> lettuceeat -> Settings -> Environment Variables',
       'Reveal each PG* and AWS_* value and paste them into .env.local manually.',
     ].join('\n'),
   )

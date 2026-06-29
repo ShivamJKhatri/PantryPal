@@ -3,8 +3,9 @@ import type { RecipeCollection, RecipeShoppingList, RecipeShoppingListItem } fro
 import { mergeItems, calcTotal } from '../lib/merge-items.ts'
 import { normalizeItems } from '../lib/normalize-item.ts'
 
-const COLLECTION_KEY = 'pantrypal_recipes'
-const LEGACY_LIST_KEY = 'pantrypal_list'
+const COLLECTION_KEY = 'lettuceeat_recipes'
+const LEGACY_COLLECTION_KEYS = ['waddamaq_recipes', 'pantrypal_recipes']
+const LEGACY_LIST_KEYS = ['waddamaq_list', 'pantrypal_list']
 
 const EMPTY: RecipeCollection = { recipes: [], cartItems: [], cartRecipeIds: [] }
 
@@ -24,7 +25,9 @@ function loadCollection(): RecipeCollection {
   try {
     const raw = sessionStorage.getItem(COLLECTION_KEY)
     if (raw) return normalizeCollection(JSON.parse(raw) as RecipeCollection)
-    const legacy = sessionStorage.getItem(LEGACY_LIST_KEY)
+    const legacyCollection = LEGACY_COLLECTION_KEYS.map((k) => sessionStorage.getItem(k)).find(Boolean)
+    if (legacyCollection) return normalizeCollection(JSON.parse(legacyCollection) as RecipeCollection)
+    const legacy = LEGACY_LIST_KEYS.map((k) => sessionStorage.getItem(k)).find(Boolean)
     if (legacy) {
       const list = JSON.parse(legacy) as RecipeShoppingList
       return normalizeCollection({ recipes: [{ ...list, items: normalizeItems(list.items) }], cartItems: [], cartRecipeIds: [] })
@@ -54,7 +57,8 @@ export function useRecipeCollection() {
       } else {
         sessionStorage.removeItem(COLLECTION_KEY)
       }
-      sessionStorage.removeItem(LEGACY_LIST_KEY)
+      for (const key of LEGACY_LIST_KEYS) sessionStorage.removeItem(key)
+      for (const key of LEGACY_COLLECTION_KEYS) sessionStorage.removeItem(key)
     } catch {
       // storage blocked
     }
